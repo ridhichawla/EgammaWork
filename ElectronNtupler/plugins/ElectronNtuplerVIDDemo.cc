@@ -105,6 +105,7 @@ class ElectronNtuplerVIDDemo : public edm::EDAnalyzer {
       edm::EDGetTokenT<edm::ValueMap<bool> > eleLooseIdMapToken_;
       edm::EDGetTokenT<edm::ValueMap<bool> > eleMediumIdMapToken_;
       edm::EDGetTokenT<edm::ValueMap<bool> > eleTightIdMapToken_;
+      edm::EDGetTokenT<edm::ValueMap<bool> > eleHEEPIdMapToken_;
 
   TTree *electronTree_;
 
@@ -122,6 +123,7 @@ class ElectronNtuplerVIDDemo : public edm::EDAnalyzer {
   std::vector<Int_t> passLooseId_;
   std::vector<Int_t> passMediumId_;
   std::vector<Int_t> passTightId_;
+  std::vector<Int_t> passHEEPId_;
 
   std::vector<Int_t> isTrue_;
 
@@ -142,7 +144,8 @@ ElectronNtuplerVIDDemo::ElectronNtuplerVIDDemo(const edm::ParameterSet& iConfig)
   eleVetoIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleVetoIdMap"))),
   eleLooseIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleLooseIdMap"))),
   eleMediumIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleMediumIdMap"))),
-  eleTightIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleTightIdMap")))
+  eleTightIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleTightIdMap"))),
+  eleHEEPIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleHEEPIdMap")))
 {
 
   //
@@ -204,6 +207,7 @@ ElectronNtuplerVIDDemo::ElectronNtuplerVIDDemo(const edm::ParameterSet& iConfig)
   electronTree_->Branch("passLooseId"  ,  &passLooseId_ );
   electronTree_->Branch("passMediumId" ,  &passMediumId_ );
   electronTree_->Branch("passTightId"  ,  &passTightId_ );
+  electronTree_->Branch("passHEEPId"  ,  &passHEEPId_ );
 
   electronTree_->Branch("isTrue"             , &isTrue_);
 
@@ -300,11 +304,12 @@ ElectronNtuplerVIDDemo::analyze(const edm::Event& iEvent, const edm::EventSetup&
   edm::Handle<edm::ValueMap<bool> > veto_id_decisions;
   edm::Handle<edm::ValueMap<bool> > loose_id_decisions;
   edm::Handle<edm::ValueMap<bool> > medium_id_decisions;
-  edm::Handle<edm::ValueMap<bool> > tight_id_decisions;
+  edm::Handle<edm::ValueMap<bool> > tight_id_decisions; 
+  edm::Handle<edm::ValueMap<bool> > heep_id_decisions;
   iEvent.getByToken(eleVetoIdMapToken_ ,veto_id_decisions);
   iEvent.getByToken(eleLooseIdMapToken_ ,loose_id_decisions);
   iEvent.getByToken(eleMediumIdMapToken_,medium_id_decisions);
-  iEvent.getByToken(eleTightIdMapToken_ ,tight_id_decisions);
+  iEvent.getByToken(eleHEEPIdMapToken_ ,heep_id_decisions);
 
   // Clear vectors
   nElectrons_ = 0;
@@ -319,6 +324,7 @@ ElectronNtuplerVIDDemo::analyze(const edm::Event& iEvent, const edm::EventSetup&
   passLooseId_ .clear();
   passMediumId_.clear();
   passTightId_ .clear();
+  passHEEPId_ .clear();
   //
   isTrue_.clear();
 
@@ -356,10 +362,12 @@ ElectronNtuplerVIDDemo::analyze(const edm::Event& iEvent, const edm::EventSetup&
     bool isPassLoose  = (*loose_id_decisions)[el];
     bool isPassMedium = (*medium_id_decisions)[el];
     bool isPassTight  = (*tight_id_decisions)[el];
+    bool isPassHEEP = (*heep_id_decisions)[el];
     passVetoId_.push_back  ( (int)isPassVeto  );
     passLooseId_.push_back ( (int)isPassLoose );
     passMediumId_.push_back( (int)isPassMedium);
     passTightId_.push_back ( (int)isPassTight );
+    passHEEPId_.push_back ( (int)isPassHEEP );
 
     // Save MC truth match
     isTrue_.push_back( matchToTruth( el, genParticles) );
