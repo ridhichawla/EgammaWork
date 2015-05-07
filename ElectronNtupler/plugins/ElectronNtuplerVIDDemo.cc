@@ -309,6 +309,7 @@ ElectronNtuplerVIDDemo::analyze(const edm::Event& iEvent, const edm::EventSetup&
   iEvent.getByToken(eleVetoIdMapToken_ ,veto_id_decisions);
   iEvent.getByToken(eleLooseIdMapToken_ ,loose_id_decisions);
   iEvent.getByToken(eleMediumIdMapToken_,medium_id_decisions);
+  iEvent.getByToken(eleTightIdMapToken_,tight_id_decisions);
   iEvent.getByToken(eleHEEPIdMapToken_ ,heep_id_decisions);
 
   // Clear vectors
