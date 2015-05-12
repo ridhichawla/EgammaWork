@@ -52,8 +52,15 @@
 #include "TTree.h"
 #include "Math/VectorUtil.h"
 
+#include "RecoEgamma/EgammaTools/interface/EffectiveAreas.h"
+#include "DataFormats/Common/interface/RefToPtr.h"
+#include "DataFormats/Common/interface/Ref.h"
+#include "DataFormats/Common/interface/RefVector.h"
+#include "DataFormats/Common/interface/RefHolder.h"
+#include "DataFormats/Common/interface/RefVectorHolder.h"
 
-
+//#include "FWCore/ParameterSet/interface/FileInPath.h"
+//#include "/afs/cern.ch/work/r/rchawla/private/CMSSW_7_4_0/src/EgammaWork/ElectronNtupler/plugins/FileInPath.h"
 //
 // class declaration
 //
@@ -102,6 +109,9 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
       edm::EDGetTokenT<edm::View<reco::GenParticle> > genParticlesMiniAODToken_;
       edm::EDGetTokenT<reco::ConversionCollection> conversionsMiniAODToken_;
 
+      // ID decisions objects
+      edm::EDGetTokenT<edm::ValueMap<bool> > eleMediumIdMapToken_;
+
   TTree *electronTree_;
 
   // Vars for PVs
@@ -127,12 +137,16 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
   std::vector<Float_t> isoNeutralHadrons_;
   std::vector<Float_t> isoPhotons_;
   std::vector<Float_t> isoChargedFromPU_;
+  std::vector<Float_t> iso1;
+  std::vector<Float_t> iso2;
   std::vector<Float_t> ooEmooP_;
   std::vector<Float_t> d0_;
   std::vector<Float_t> dz_;
   std::vector<Int_t>   expectedMissingInnerHits_;
   std::vector<Int_t>   passConversionVeto_;     
   std::vector<Int_t>   isTrue_;
+
+  std::vector<Int_t> passMediumId_;
 };
 
 //
@@ -146,7 +160,8 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
 //
 // constructors and destructor
 //
-SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig)
+SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
+eleMediumIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleMediumIdMap")))
 {
 
   //
@@ -227,12 +242,16 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig)
   electronTree_->Branch("isoNeutralHadrons"      , &isoNeutralHadrons_);
   electronTree_->Branch("isoPhotons"             , &isoPhotons_);
   electronTree_->Branch("isoChargedFromPU"       , &isoChargedFromPU_);
+  electronTree_->Branch("iso1"     , &iso1);
+  electronTree_->Branch("iso2"     , &iso2);
   electronTree_->Branch("ooEmooP", &ooEmooP_);
   electronTree_->Branch("d0"     , &d0_);
   electronTree_->Branch("dz"     , &dz_);
   electronTree_->Branch("expectedMissingInnerHits", &expectedMissingInnerHits_);
   electronTree_->Branch("passConversionVeto", &passConversionVeto_);
   electronTree_->Branch("isTrue"    , &isTrue_);
+
+  electronTree_->Branch("passMediumId" ,  &passMediumId_ );
  
 }
 
@@ -342,7 +361,13 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   else
     iEvent.getByToken(conversionsMiniAODToken_, conversions);
 
-  // Loop over electrons
+  // Get the electron ID data from the event stream.
+  // Note: this implies that the VID ID modules have been run upstream.
+  // If you need more info, check with the EGM group.
+  edm::Handle<edm::ValueMap<bool> > medium_id_decisions;
+  iEvent.getByToken(eleMediumIdMapToken_,medium_id_decisions);
+  
+  // Clear vectors
   nElectrons_ = 0;
   pt_.clear();
   etaSC_.clear();
@@ -355,13 +380,20 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   isoNeutralHadrons_.clear();
   isoPhotons_.clear();
   isoChargedFromPU_.clear();
+  iso1.clear();
+  iso2.clear();
   ooEmooP_.clear();
   d0_.clear();
   dz_.clear();
   expectedMissingInnerHits_.clear();
   passConversionVeto_.clear();     
   isTrue_.clear();
+
+  passMediumId_.clear();
   
+  int iterator = 0;
+  
+  // Loop over electrons
   for (size_t i = 0; i < electrons->size(); ++i){
     const auto el = electrons->ptrAt(i);
   // for (const pat::Electron &el : *electrons) {
@@ -401,6 +433,19 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     isoPhotons_.push_back( pfIso.sumPhotonEt );
     isoChargedFromPU_.push_back( pfIso.sumPUPt );
 
+    reco::GsfElectronRef myElectronRef(el,iterator);
+
+    float abseta = fabs( myEectronRef->superCluster()->eta());
+    // The effective areas constants file in the local release or default CMSSW, whichever is found
+    edm::FileInPath eaConstantsFile = "EgammaAnalysis/ElectronTools/data/PHYS14/effAreaElectrons_cone03_pfNeuHadronsAndPhotons.txt";
+    EffectiveAreas effectiveAreas(eaConstantsFile.fullPath());
+    float eA = effectiveAreas.getEffectiveArea(abseta);
+    
+    iso1.push_back((pfIso.sumChargedHadronPt + max<float>( 0.0, pfIso.sumNeutralHadronEt + pfIso.sumPhotonEt - 0.5 * pfIso.sumPUPt))/(el->pt()));
+    iso2.push_back((pfIso.sumChargedHadronPt + max<float>( 0.0, pfIso.sumNeutralHadronEt + pfIso.sumPhotonEt - rho_ * eA))/(el->pt()));
+
+    ++iterator;
+    
     // Impact parameter
     reco::GsfTrackRef theTrack = el->gsfTrack();
     d0_.push_back( (-1) * theTrack->dxy(firstGoodVertex->position() ) );
@@ -418,6 +463,9 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     // Match to generator level truth
     
     isTrue_.push_back( matchToTruth( el, genParticles) );
+
+    bool isPassMedium = (*medium_id_decisions)[el];
+    passMediumId_.push_back( (int)isPassMedium);
     
     
   }
