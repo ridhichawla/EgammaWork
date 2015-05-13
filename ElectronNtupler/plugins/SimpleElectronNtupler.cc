@@ -137,8 +137,8 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
   std::vector<Float_t> isoNeutralHadrons_;
   std::vector<Float_t> isoPhotons_;
   std::vector<Float_t> isoChargedFromPU_;
-  std::vector<Float_t> iso1;
-  std::vector<Float_t> iso2;
+  std::vector<Float_t> isoDeltaBeta_;
+  std::vector<Float_t> isoRho_;
   std::vector<Float_t> ooEmooP_;
   std::vector<Float_t> d0_;
   std::vector<Float_t> dz_;
@@ -242,8 +242,8 @@ eleMediumIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::In
   electronTree_->Branch("isoNeutralHadrons"      , &isoNeutralHadrons_);
   electronTree_->Branch("isoPhotons"             , &isoPhotons_);
   electronTree_->Branch("isoChargedFromPU"       , &isoChargedFromPU_);
-  electronTree_->Branch("iso1"     , &iso1);
-  electronTree_->Branch("iso2"     , &iso2);
+  electronTree_->Branch("isoDeltaBeta_"     , &isoDeltaBeta_);
+  electronTree_->Branch("isoRho_"     , &isoRho_);
   electronTree_->Branch("ooEmooP", &ooEmooP_);
   electronTree_->Branch("d0"     , &d0_);
   electronTree_->Branch("dz"     , &dz_);
@@ -380,8 +380,8 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   isoNeutralHadrons_.clear();
   isoPhotons_.clear();
   isoChargedFromPU_.clear();
-  iso1.clear();
-  iso2.clear();
+  isoDeltaBeta_.clear();
+  isoRho_.clear();
   ooEmooP_.clear();
   d0_.clear();
   dz_.clear();
@@ -391,7 +391,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   passMediumId_.clear();
   
-  int iterator = 0;
+  //int iterator = 0;
   
   // Loop over electrons
   for (size_t i = 0; i < electrons->size(); ++i){
@@ -433,18 +433,20 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     isoPhotons_.push_back( pfIso.sumPhotonEt );
     isoChargedFromPU_.push_back( pfIso.sumPUPt );
 
-    reco::GsfElectronRef myElectronRef(el,iterator);
+    //reco::GsfElectronRef myElectronRef(el,iterator);
 
-    float abseta = fabs( myEectronRef->superCluster()->eta());
+    //float abseta = fabs( myEectronRef->superCluster()->eta());
+    float abseta = fabs(el->superCluster()->eta());
     // The effective areas constants file in the local release or default CMSSW, whichever is found
-    edm::FileInPath eaConstantsFile = "EgammaAnalysis/ElectronTools/data/PHYS14/effAreaElectrons_cone03_pfNeuHadronsAndPhotons.txt";
+    //edm::FileInPath eaConstantsFile = "EgammaAnalysis/ElectronTools/data/PHYS14/effAreaElectrons_cone03_pfNeuHadronsAndPhotons.txt";
+    edm::FileInPath eaConstantsFile("EgammaAnalysis/ElectronTools/data/PHYS14/effAreaElectrons_cone03_pfNeuHadronsAndPhotons.txt");
     EffectiveAreas effectiveAreas(eaConstantsFile.fullPath());
     float eA = effectiveAreas.getEffectiveArea(abseta);
     
-    iso1.push_back((pfIso.sumChargedHadronPt + max<float>( 0.0, pfIso.sumNeutralHadronEt + pfIso.sumPhotonEt - 0.5 * pfIso.sumPUPt))/(el->pt()));
-    iso2.push_back((pfIso.sumChargedHadronPt + max<float>( 0.0, pfIso.sumNeutralHadronEt + pfIso.sumPhotonEt - rho_ * eA))/(el->pt()));
+    isoDeltaBeta_.push_back((pfIso.sumChargedHadronPt + max<float>( 0.0, pfIso.sumNeutralHadronEt + pfIso.sumPhotonEt - 0.5 * pfIso.sumPUPt))/(el->pt()));
+    isoRho_.push_back((pfIso.sumChargedHadronPt + max<float>( 0.0, pfIso.sumNeutralHadronEt + pfIso.sumPhotonEt - rho_ * eA))/(el->pt()));
 
-    ++iterator;
+    //++iterator;
     
     // Impact parameter
     reco::GsfTrackRef theTrack = el->gsfTrack();
