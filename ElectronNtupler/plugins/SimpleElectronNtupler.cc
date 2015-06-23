@@ -59,6 +59,15 @@ Implementation:
 #include "DataFormats/Common/interface/RefHolder.h"
 #include "DataFormats/Common/interface/RefVectorHolder.h"
 
+#include "FWCore/Utilities/interface/InputTag.h"
+
+#include "FWCore/Common/interface/TriggerNames.h"
+#include "DataFormats/Common/interface/TriggerResults.h"
+
+#include "DataFormats/Math/interface/deltaR.h"
+
+#include "DataFormats/PatCandidates/interface/TriggerObjectStandAlone.h"
+
 #include "/afs/cern.ch/work/r/rchawla/private/CMSSW_7_4_0/src/EgammaWork/ElectronNtupler/plugins/utils.h"
 //#include "FWCore/ParameterSet/interface/FileInPath.h"
 //#include "/afs/cern.ch/work/r/rchawla/private/CMSSW_7_4_0/src/EgammaWork/ElectronNtupler/plugins/FileInPath.h"
@@ -78,6 +87,10 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
       TRUE_ELECTRON_FROM_TAU,
       TRUE_NON_PROMPT_ELECTRON}; // The last does not include tau parents
 
+    /*std::vector<math::XYZTLorentzVector> getHLTP4(const edm::TriggerNames & triggerNames, edm::Handle<pat::TriggerObjectStandAloneCollection> triggerObjects, std::vector<std::string> filterLabels);
+
+    bool onlineOfflineMatching(const edm::TriggerNames & triggerNames, edm::Handle<pat::TriggerObjectStandAloneCollection> triggerObjects, math::XYZTLorentzVector p4, std::string filterLabel, float dRmin);*/
+
   private:
     virtual void beginJob() override;
     virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
@@ -94,6 +107,8 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
 
     // ----------member data ---------------------------
     // Data members that are the same for AOD and miniAOD
+    edm::EDGetTokenT<edm::TriggerResults> triggerToken_;
+    edm::EDGetTokenT<pat::TriggerObjectStandAloneCollection> triggerObjects_;
     edm::EDGetTokenT<edm::View<PileupSummaryInfo> > pileupToken_;
     edm::EDGetTokenT<double> rhoToken_;
     edm::EDGetTokenT<reco::BeamSpot> beamSpotToken_;
@@ -113,7 +128,14 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     // ID decisions objects
     edm::EDGetTokenT<edm::ValueMap<bool> > eleMediumIdMapToken_;
 
+    edm::Service<TFileService> fs;
     TTree *electronTree_;
+
+    // Histograms
+    TH1F* nevents_;
+
+    // General
+    Double_t RunNo_, EvtNo_, Lumi_, Bunch_;
 
     // Vars for PVs
     Int_t pvNTracks_;
@@ -123,6 +145,17 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     Int_t nPU_;        // generated pile-up
     Int_t nPV_;        // number of reconsrtucted primary vertices
     Float_t rho_;      // the rho variable
+
+    // Trigger
+    std::string string_singleEle;
+    std::string string_doubleEle;
+    std::vector<std::string> hlNames_;
+    std::vector<std::string> single_electron_triggers_in_run;
+    std::vector<std::string> double_electron_triggers_in_run;
+    std::vector<int> idx_singleElectron; 
+    std::vector<int> idx_doubleElectron;
+    bool singleElectron;
+    bool doubleElectron;
 
     // all electron variables
     Int_t nElectrons_;
@@ -179,15 +212,46 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     std::vector<Int_t>   isTrue_;
 
     std::vector<Int_t> passMediumId_;
+
+    std::vector<pat::TriggerObjectStandAlone> leg1triggerObj;
+    std::vector<pat::TriggerObjectStandAlone> leg2triggerObj;
+
+    /*std::vector<std::string> tagFilterName_;
+    std::vector<std::string> probeFilterName_;*/
 };
 
 SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   eleMediumIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleMediumIdMap")))
 {
+  nevents_ = fs->make<TH1F>("nevents_","nevents_",2,0,2);
+  string_singleEle = "HLT_Ele27_WP80_v";
+  string_doubleEle = "HLT_Ele17_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_Ele8_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_v";
+  //std::string TagFilter("hltEle23Ele12CaloIdTrackIdIsoTrackIsoLeg1Filter");
+  //std::string ProbeFilter("hltEle23Ele12CaloIdTrackIdIsoTrackIsoLeg2Filter");
 
   //
   // Prepare tokens for all input collections and objects
   //
+
+  // Trigger
+  triggerToken_  = mayConsume<edm::TriggerResults>
+    (iConfig.getParameter<edm::InputTag>
+     ("trigger"));
+
+  triggerObjects_ = consumes<pat::TriggerObjectStandAloneCollection>
+    (iConfig.getParameter<edm::InputTag>
+     ("objects"));
+
+  /*tagFilterName_ = (iConfig.getParameter<std::vector<std::string>>
+      ("tagFilterName"));
+
+  probeFilterName_ = (iConfig.getParameter<std::vector<std::string>>
+      ("probeFilterName"));*/
+
+  /*if (tagFilterName_.size() != probeFilterName_.size()) {
+    std::cout << "Need to specify the same numbers of tag and probe filters." << std::endl;
+    abort();
+  }*/
 
   // Universal tokens for AOD and miniAOD  
   pileupToken_ = consumes<edm::View<PileupSummaryInfo> >
@@ -243,12 +307,20 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   edm::Service<TFileService> fs;
   electronTree_ = fs->make<TTree> ("ElectronTree", "Electron data");
 
+  electronTree_->Branch("RunNo", &RunNo_, "RunNo/D");
+  electronTree_->Branch("EvtNo", &EvtNo_, "EvtNo/D");
+  electronTree_->Branch("Lumi", &Lumi_, "Lumi/D");
+  electronTree_->Branch("Bunch", &Bunch_, "Bunch/D");
+
   electronTree_->Branch("pvNTracks"    ,  &pvNTracks_ , "pvNTracks/I");
 
   electronTree_->Branch("nPV"        ,  &nPV_     , "nPV/I");
   electronTree_->Branch("nPU"        ,  &nPU_     , "nPU/I");
   electronTree_->Branch("nPUTrue"    ,  &nPUTrue_ , "nPUTrue/I");
   electronTree_->Branch("rho"        ,  &rho_ , "rho/F");
+
+  electronTree_->Branch("singleElectron"    ,  &singleElectron    );
+  electronTree_->Branch("doubleElectron"    ,  &doubleElectron    );
 
   electronTree_->Branch("nEle"    ,  &nElectrons_ , "nEle/I");
   electronTree_->Branch("nGenEle"    ,  &nGenElectrons_ , "nGenEle/I");
@@ -305,16 +377,11 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
 
 SimpleElectronNtupler::~SimpleElectronNtupler()
 {
-
   // do anything here that needs to be done at desctruction time
   // (e.g. close files, deallocate resources etc.)
-
 }
 
-
-//
 // member functions
-//
 
 // ------------ method called for each event  ------------
   void
@@ -324,8 +391,90 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   using namespace edm;
   using namespace reco;
 
-  //int EvtNo = iEvent.id().event();
-  //cout<<"Evt No. :"<<EvtNo<<endl;
+  nevents_->Fill(1);
+  RunNo_ = iEvent.id().run();
+  EvtNo_ = iEvent.id().event();
+  Lumi_  = iEvent.luminosityBlock();
+  Bunch_ = iEvent.bunchCrossing();
+
+  // Get Triggers
+  Handle<edm::TriggerResults> triggerHandle;
+  iEvent.getByToken(triggerToken_, triggerHandle);
+
+  Handle<pat::TriggerObjectStandAloneCollection> triggerObjects;
+  iEvent.getByToken(triggerObjects_, triggerObjects);
+
+  const edm::TriggerNames & triggerNames = iEvent.triggerNames(*triggerHandle);
+
+  std::vector< math::XYZTLorentzVector> triggerCandidates;
+  std::vector<std::string> filterLabels;
+
+  std::string TagFilter("hltEle23Ele12CaloIdTrackIdIsoTrackIsoLeg1Filter");
+  std::string ProbeFilter("hltEle23Ele12CaloIdTrackIdIsoTrackIsoLeg2Filter");
+
+  for (pat::TriggerObjectStandAlone obj : *triggerObjects) {
+    obj.unpackPathNames(triggerNames);
+    for (std::string filter : filterLabels) {
+      if (obj.hasFilterLabel(filter))
+	triggerCandidates.push_back(obj.p4());
+    }
+  }
+
+  for (pat::TriggerObjectStandAlone obj : *triggerObjects) {
+    obj.unpackPathNames(triggerNames);
+    for (unsigned h = 0; h < obj.filterLabels().size(); ++h){
+      if(TagFilter.compare(obj.filterLabels()[h])==0){
+	std::cout<<"passed the leg1 filter "<<std::endl;
+	leg1triggerObj.push_back(obj);}
+
+	if(ProbeFilter.compare(obj.filterLabels()[h])==0){
+	  std::cout<<"passed the leg2 filter "<<std::endl;
+	  leg2triggerObj.push_back(obj);}
+    }
+  }
+
+  for (unsigned int i=0; i<triggerHandle->size(); i++)
+  {
+    std::string trigName = triggerNames.triggerName(i);
+    int trigResult = triggerHandle->accept(i); //bool not to use
+    cout<<"Name of Trigger = "<<trigName<<"   Trigger Result = "<<trigResult<<"   Trigger Number = "<<i<<endl;
+  }
+
+  hlNames_ = triggerNames.triggerNames();
+  int ntriggers = hlNames_.size();
+  Int_t hsize = Int_t(triggerHandle->size());
+
+  for (int itrigger=0; itrigger<ntriggers; itrigger++)
+  {
+    std::string hltname(triggerNames.triggerName(itrigger));
+
+    size_t found_singleEle = hltname.find(string_singleEle);
+    size_t found_doubleEle = hltname.find(string_doubleEle);
+
+    if(found_singleEle !=string::npos){
+      single_electron_triggers_in_run.push_back(hltname);
+    }
+
+    if(found_doubleEle !=string::npos){
+      double_electron_triggers_in_run.push_back(hltname);
+    }
+  }
+
+  for ( int itrigger = 0 ; itrigger < (int)single_electron_triggers_in_run.size(); itrigger++){
+    idx_singleElectron.push_back(triggerNames.triggerIndex(single_electron_triggers_in_run[itrigger]));
+    if(idx_singleElectron.size()>0)
+      if(idx_singleElectron[itrigger] < hsize){
+	singleElectron = (triggerHandle->accept(idx_singleElectron[itrigger]));
+      }
+  }
+
+  for ( int itrigger = 0 ; itrigger < (int)double_electron_triggers_in_run.size(); itrigger++){
+    idx_doubleElectron.push_back(triggerNames.triggerIndex(double_electron_triggers_in_run[itrigger]));
+    if(idx_doubleElectron.size()>0)
+      if(idx_doubleElectron[itrigger] < hsize){
+	doubleElectron = (triggerHandle->accept(idx_doubleElectron[itrigger]));
+      }
+  } 
 
   // Get Pileup info
   Handle<edm::View<PileupSummaryInfo> > pileupHandle;
@@ -372,48 +521,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   else
     iEvent.getByToken(genParticlesMiniAODToken_,genParticles);
 
-  /*const reco::GenParticle* genColl= &(*prunedGenParticles);
-    std::vector<const reco::GenParticle *> sortedPtrs;
-    sortedPtrs.resize(genColl->size());
-    for (const reco::GenParticle &g : *genColl) { sortedPtrs.push_back(&g); }
-    std::sort(sortedPtrs.begin(), sortedPtrs.end(),PtGreater());*/
-
   nGenElectrons_ = 0;
-
-  /*for (auto const & genPtr : sortedPtrs) {
-    auto const & geni = *genPtr;
-
-    if (abs(geni.pdgId())==11 && (geni.status()==1)) {
-    gPost_energy_.push_back(geni.energy());
-    gPost_px_.push_back(geni.px());
-    gPost_py_.push_back(geni.py());
-    gPost_pz_.push_back(geni.pz());
-    gPost_pt_.push_back(geni.pt());
-    gPost_eta_.push_back(geni.eta());
-    gPost_rap_.push_back(geni.rapidity());
-    gPost_phi_.push_back(geni.phi());
-    }
-
-    if (abs(geni.pdgId())==11 && (geni.status()==23) && abs(geni.mother()->pdgId())==23){
-    nGenElectrons_++;
-    cout<<"Gen electrons: "<<nGenElectrons_<<endl;
-
-    ZMass_.push_back((geni.mother())->mass());
-    ZPt_.push_back((geni.mother())->pt());
-    ZEta_.push_back((geni.mother())->eta());
-    ZRap_.push_back((geni.mother())->rapidity());
-    ZPhi_.push_back((geni.mother())->phi());
-
-    gPre_energy_.push_back(geni.energy());
-    gPre_px_.push_back(geni.px());
-    gPre_py_.push_back(geni.py());
-    gPre_pz_.push_back(geni.pz());
-    gPre_pt_.push_back(geni.pt());
-    gPre_eta_.push_back(geni.eta());
-    gPre_rap_.push_back(geni.rapidity());
-    gPre_phi_.push_back(geni.phi());
-    }
-    }*/
 
   for(size_t i = 0; i < genParticles->size(); ++i){
     const GenParticle &e = (*genParticles)[i];
@@ -432,10 +540,10 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       gPost_phi_.push_back(e.phi());
     }
 
-    cout<<"particle no. = "<<i<<"   ID = "<<id<<"   STATUS = "<<st<<endl;
+    //cout<<"particle no. = "<<i<<"   ID = "<<id<<"   STATUS = "<<st<<endl;
     /*if (id==23 && st==22){
-      cout<<"id: "<<id<<endl;
-      }*/
+      cout<<"id: "<<id<<endl;}*/
+
     if (fabs(id)==11 && st==23 && mother->pdgId()==23){  
       nGenElectrons_++;
 
@@ -507,6 +615,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   edm::Handle<edm::ValueMap<bool> > medium_id_decisions;
   iEvent.getByToken(eleMediumIdMapToken_,medium_id_decisions);
 
+  std::vector< math::XYZTLorentzVector> electronCandidates;
   nElectrons_ = 0;
 
   // Loop over electrons
@@ -524,6 +633,8 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     rap_.push_back( el->rapidity() );
     phi_.push_back( el->phi() );
     energy_.push_back( el->energy() );
+
+    electronCandidates.push_back(el->p4());
 
     double R = sqrt(el->superCluster()->x()*el->superCluster()->x() + el->superCluster()->y()*el->superCluster()->y() +el->superCluster()->z()*el->superCluster()->z());
     double Rt = sqrt(el->superCluster()->x()*el->superCluster()->x() + el->superCluster()->y()*el->superCluster()->y());
@@ -700,6 +811,37 @@ SimpleElectronNtupler::fillDescriptions(edm::ConfigurationDescriptions& descript
   desc.setUnknown();
   descriptions.addDefault(desc);
 }
+
+/*
+   std::vector<math::XYZTLorentzVector> SimpleElectronNtupler::getHLTP4(const edm::TriggerNames & triggerNames, edm::Handle<pat::TriggerObjectStandAloneCollection> triggerObjects, std::vector<std::string> filterLabels) {
+
+   std::vector< math::XYZTLorentzVector> triggerCandidates;
+
+   for (pat::TriggerObjectStandAlone obj : *triggerObjects) { 
+   obj.unpackPathNames(triggerNames); 
+   for (std::string filter : filterLabels) {
+   if (obj.hasFilterLabel(filter)) 
+   triggerCandidates.push_back(obj.p4());
+   }
+   }
+
+   return triggerCandidates;
+   }
+
+   bool SimpleElectronNtupler::onlineOfflineMatching(const edm::TriggerNames & triggerNames, edm::Handle<pat::TriggerObjectStandAloneCollection> triggerObjects, math::XYZTLorentzVector p4, std::string filterLabel, float dRmin=0.15) {
+
+   for (pat::TriggerObjectStandAlone obj : *triggerObjects) { 
+   obj.unpackPathNames(triggerNames); 
+   if (obj.hasFilterLabel(filterLabel)) {
+   float dR = deltaR(p4, obj.p4());
+   if (dR < dRmin)
+   return true;
+   }
+   }
+
+   return false;
+   }
+   */
 
 int SimpleElectronNtupler::matchToTruth(const edm::Ptr<reco::GsfElectron> el, 
     const edm::Handle<edm::View<reco::GenParticle>> &prunedGenParticles){
