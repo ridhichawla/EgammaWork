@@ -214,13 +214,13 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
 
     std::vector<Int_t> passMediumId_;
 
-    std::vector<double> pt_l1;
-    std::vector<double> eta_l1;
-    std::vector<double> phi_l1;
+    std::vector<double> pt_f1;
+    std::vector<double> eta_f1;
+    std::vector<double> phi_f1;
 
-    std::vector<double> pt_l2;
-    std::vector<double> eta_l2;
-    std::vector<double> phi_l2;
+    std::vector<double> pt_f2;
+    std::vector<double> eta_f2;
+    std::vector<double> phi_f2;
 
     std::vector<pat::TriggerObjectStandAlone> leg1triggerObj;
     std::vector<pat::TriggerObjectStandAlone> leg2triggerObj;
@@ -398,7 +398,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   using namespace std;
   using namespace edm;
   using namespace reco;
-  bool trigResult = false;
+  //bool trigResult = false;
 
   nevents_->Fill(1);
   RunNo_ = iEvent.id().run();
@@ -419,7 +419,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   std::string TagFilter("hltEle23Ele12CaloIdTrackIdIsoTrackIsoLeg1Filter");
   std::string ProbeFilter("hltEle23Ele12CaloIdTrackIdIsoTrackIsoLeg2Filter");
 
-
   for (pat::TriggerObjectStandAlone obj : *triggerObjects) {
     obj.unpackPathNames(triggerNames);
     for (unsigned i = 0; i < obj.filterLabels().size(); ++i){
@@ -429,35 +428,50 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   }
 
   cout << "*********************************************" << endl;
-
+/*
   for (unsigned int i=0; i<triggerHandle->size(); i++)
   {
     std::string trigName = triggerNames.triggerName(i);
     trigResult = triggerHandle->accept(i);
     if(i==64) {cout<<"Name of Trigger = "<<trigName<<"   Trigger Result = "<<trigResult<<"   Trigger Number = "<<i<<endl; }
-  }
+  }*/
 
-  //bool tagpass = false;
-  //bool probepass = false;
+  bool tagPass = false;
+  bool probePass = false;
 
   for (pat::TriggerObjectStandAlone obj : *triggerObjects) {
     obj.unpackPathNames(triggerNames);
     for (unsigned j = 0; j < obj.filterLabels().size(); ++j){
       if((TagFilter.compare(obj.filterLabels()[j]))==0){
-	//tagpass = true;
-	pt_l1.push_back(obj.pt());
-	eta_l1.push_back(obj.eta());
-	phi_l1.push_back(obj.phi());
+	tagPass = true;
+	pt_f1.push_back(obj.pt());
+	eta_f1.push_back(obj.eta());
+	phi_f1.push_back(obj.phi());
       }
       
       if((ProbeFilter.compare(obj.filterLabels()[j]))==0){
-	//probepass = true;
-	pt_l2.push_back(obj.pt());
-        eta_l2.push_back(obj.eta());
-        phi_l2.push_back(obj.phi());
+	probePass = true;
+	pt_f2.push_back(obj.pt());
+        eta_f2.push_back(obj.eta());
+        phi_f2.push_back(obj.phi());
       }
+
     }
   } 
+
+  //cout<<"trigResult: "<<trigResult<<endl;
+  //if(tagPass && probePass) {cout<<"pt_f1 size: "<<pt_f1.size()<<"   pt_f2 size: "<<pt_f2.size()<<endl;}
+
+  int count = 0;
+  if(tagPass && probePass){
+    cout<<"pt_f1(0): "<<pt_f1.at(0)<<"   pt_f2(0): "<<pt_f2.at(0)<<endl;
+    cout<<"pt_f1(1): "<<pt_f1.at(1)<<"   pt_f2(1): "<<pt_f2.at(1)<<endl;
+    int pt_diff = pt_f1.at(0) - pt_f2.at(0);
+    if(pt_diff != 0) count = count+1;
+    cout<<"count: "<<count<<endl;
+  }
+  //cout<<"count: "<<count<<endl;
+
     //if(trigResult == 1 && (!tagpass || !probepass)) {cout<<"tagpass: "<<tagpass<<"   probepass: "<<probepass<<endl;}
     //if(tagpass && probepass) {
     //double dR = deltaR(el->eta(),el->phi(),obj.eta(),obj.phi());
@@ -755,12 +769,12 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   // Clear vectors
 
-  pt_l1.clear();
-  eta_l1.clear();
-  phi_l1.clear();
-  pt_l2.clear();
-  eta_l2.clear();
-  phi_l2.clear();
+  pt_f1.clear();
+  eta_f1.clear();
+  phi_f1.clear();
+  pt_f2.clear();
+  eta_f2.clear();
+  phi_f2.clear();
 
   ZMass_.clear();
   ZPt_.clear();
