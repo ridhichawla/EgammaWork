@@ -8,11 +8,12 @@ process.MessageLogger.cerr.FwkReport.reportEvery = 10000
 #
 # Define input data to read
 #
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) ) 
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) ) 
 
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 # NOTE: the pick the right global tag!
-process.GlobalTag.globaltag = 'PHYS14_25_V1::All'
+#process.GlobalTag.globaltag = 'PHYS14_25_V1::All'
+process.GlobalTag.globaltag = 'MCRUN2_74_V9::All'
 
 inputFilesAOD = cms.untracked.vstring(
     # AOD test files from /DYJetsToLL_M-50_13TeV-madgraph-pythia8/Phys14DR-PU20bx25_PHYS14_25_V1-v1/AODSIM
@@ -24,7 +25,10 @@ inputFilesAOD = cms.untracked.vstring(
 inputFilesMiniAOD = cms.untracked.vstring(
     # MiniAOD test files from /DYJetsToLL_M-50_13TeV-madgraph-pythia8/Phys14DR-PU20bx25_PHYS14_25_V1-v1/MINIAODSIM
     #'/DYToEE_M-50_Tune4C_13TeV-pythia8/Phys14DR-PU20bx25_tsg_castor_PHYS14_25_V1-v1/MINIAODSIM'
-    'file:/afs/cern.ch/work/r/rchawla/private/CMSSW_7_4_0/src/EgammaWork/ElectronNtupler/12BA0756-4681-E411-9C3D-002590A88812.root'
+    '/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v3/MINIAODSIM'
+    #'/store/mc/RunIISpring15DR74/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v3/10000/009D49A5-7314-E511-84EF-0025905A605E.root'
+    #'file:/afs/cern.ch/work/r/rchawla/private/CMSSW_7_4_0/src/EgammaWork/ElectronNtupler/20678BB9-6E84-E411-8354-001E67397751.root'
+    #'file:/afs/cern.ch/work/r/rchawla/private/CMSSW_7_4_0/src/EgammaWork/ElectronNtupler/0033A97B-8707-E511-9D3B-008CFA1980B8.root'
     )
 
 #
@@ -71,7 +75,8 @@ process.ntupler = cms.EDAnalyzer('SimpleElectronNtupler',
                                  #
                                  # Common to all formats objects
                                  #
-                                 pileup   = cms.InputTag("addPileupInfo"),
+                                 trigger  = cms.InputTag("TriggerResults::HLT"),
+				 pileup   = cms.InputTag("addPileupInfo"),
                                  rho      = cms.InputTag("fixedGridRhoFastjetAll"),
                                  beamSpot = cms.InputTag('offlineBeamSpot'),
                                  #
@@ -88,12 +93,17 @@ process.ntupler = cms.EDAnalyzer('SimpleElectronNtupler',
                                  genParticlesMiniAOD = cms.InputTag("prunedGenParticles"),
                                  verticesMiniAOD     = cms.InputTag("offlineSlimmedPrimaryVertices"),
                                  conversionsMiniAOD  = cms.InputTag('reducedEgamma:reducedConversions'),
-				 eleMediumIdMap = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-PHYS14-PU20bx25-V2-standalone-medium")
+				 eleMediumIdMap = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-PHYS14-PU20bx25-V2-standalone-medium"),
+
+				 objects = cms.InputTag('selectedPatTrigger'),
+				 tagFilterName   = cms.vstring("hltEle23Ele12CaloIdTrackIdIsoTrackIsoLeg1Filter"),
+				 probeFilterName = cms.vstring("hltEle23Ele12CaloIdTrackIdIsoTrackIsoLeg2Filter")
                                  )
 
 process.TFileService = cms.Service("TFileService",
-                                   fileName = cms.string('DYEE_M-50_miniAOD_13TeV.root')
+                                   fileName = cms.string('DYJetsToLL_M-50_miniAOD_13TeV.root')
                                    )
 
 
 process.p = cms.Path(process.egmGsfElectronIDSequence * process.ntupler)
+#process.p = cms.Path(process.ntupler)
