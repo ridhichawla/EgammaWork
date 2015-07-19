@@ -93,11 +93,6 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
     virtual void endJob() override;
 
-    //virtual void beginRun(edm::Run const&, edm::EventSetup const&) override;
-    //virtual void endRun(edm::Run const&, edm::EventSetup const&) override;
-    //virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
-    //virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
-
     int matchToTruth(const edm::Ptr<reco::GsfElectron> el,  
 	const edm::Handle<edm::View<reco::GenParticle>>  &prunedGenParticles);
     void findFirstNonElectronMother(const reco::Candidate *particle, int &ancestorPID, int &ancestorStatus);
@@ -413,8 +408,8 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   const edm::TriggerNames & triggerNames = iEvent.triggerNames(*triggerHandle);
 
   std::vector<std::string> filterLabels;
-  std::string TagFilter("hltEle23Ele12CaloIdTrackIdIsoTrackIsoLeg1Filter");
-  std::string ProbeFilter("hltEle23Ele12CaloIdTrackIdIsoTrackIsoLeg2Filter");
+  std::string TagFilter("hltEle17Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg1Filter");
+  std::string ProbeFilter("hltEle17Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg2Filter");
 
   /*for (unsigned int i=0; i<triggerHandle->size(); i++)
     {
@@ -466,6 +461,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     if(idx_doubleElectron.size()>0)
       if(idx_doubleElectron[itrigger] < hsize){
 	doubleElectron = (triggerHandle->accept(idx_doubleElectron[itrigger]));
+	//cout<<doubleElectron<<endl;
       }
   } 
 
@@ -523,8 +519,8 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       gPost_phi_.push_back(e.phi());
     }
 
-    /*cout<<"particle no. = "<<i<<"   ID = "<<id<<"   STATUS = "<<st<<endl;
-      if (id==23 && st==22){cout<<"id: "<<id<<endl;}*/
+    //cout<<"particle no. = "<<i<<"   ID = "<<id<<"   STATUS = "<<st<<endl;
+    //  if (id==23 && st==22){cout<<"id: "<<id<<endl;}
 
     if (fabs(id)==11 && st==23 && mother->pdgId()==23){  
       nGenElectrons_++;
@@ -595,7 +591,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   iEvent.getByToken(eleMediumIdMapToken_,medium_id_decisions);
 
   nElectrons_ = 0;
-  //cout<<"Electrons: "<<electrons->size()<<endl;
+  //cout<<"Electrons: "<<electrons->size()<<"      trigger: "<<doubleElectron<<endl;
   
   // Loop over electrons
   for (size_t i = 0; i < electrons->size(); ++i){
@@ -664,8 +660,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     dz_.push_back( theTrack->dz( firstGoodVertex->position() ) );
 
     // Conversion rejection
-    expectedMissingInnerHits_.push_back(el->gsfTrack()->hitPattern()
-	.numberOfHits(reco::HitPattern::MISSING_INNER_HITS) );
+    expectedMissingInnerHits_.push_back(el->gsfTrack()->hitPattern().numberOfHits(reco::HitPattern::MISSING_INNER_HITS) );
 
     bool passConvVeto = !ConversionTools::hasMatchedConversion(*el, conversions, theBeamSpot->position());
     passConversionVeto_.push_back( (int) passConvVeto );
@@ -714,6 +709,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   gPost_phi_.clear();
   pt_.clear();
   eta_.clear();
+  rap_.clear();
   phi_.clear();
   energy_.clear();
   etSC_.clear();
