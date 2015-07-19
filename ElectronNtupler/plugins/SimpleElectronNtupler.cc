@@ -387,6 +387,7 @@ SimpleElectronNtupler::~SimpleElectronNtupler()
   void
 SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
+
   using namespace std;
   using namespace edm;
   using namespace reco;
@@ -421,6 +422,8 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   //bool tagPass = false;
   //bool probePass = false;
 
+
+
   for (pat::TriggerObjectStandAlone obj : *triggerObjects) {
     obj.unpackPathNames(triggerNames);
     for (unsigned j = 0; j < obj.filterLabels().size(); ++j){
@@ -441,6 +444,9 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     }
   } 
 
+  //cout<<"pt_f1: "<<pt_f1.size()<<"   "<<"eta_f1: "<<eta_f1.size()<<"   "<<"phi_f1: "<<phi_f1.size()<<endl;
+  //cout<<"pt_f2: "<<pt_f2.size()<<"   "<<"eta_f2: "<<eta_f2.size()<<"   "<<"phi_f2: "<<phi_f2.size()<<endl;
+  //
   hlNames_ = triggerNames.triggerNames();
   int ntriggers = hlNames_.size();
   Int_t hsize = Int_t(triggerHandle->size());
@@ -456,6 +462,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     }
   }
 
+
   for ( int itrigger = 0 ; itrigger < (int)double_electron_triggers_in_run.size(); itrigger++){
     idx_doubleElectron.push_back(triggerNames.triggerIndex(double_electron_triggers_in_run[itrigger]));
     if(idx_doubleElectron.size()>0)
@@ -464,6 +471,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	//cout<<doubleElectron<<endl;
       }
   } 
+
 
   // Get Pileup info
   Handle<edm::View<PileupSummaryInfo> > pileupHandle;
@@ -543,6 +551,12 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     }
   }
 
+  //cout<<"gPost_energy : "<<gPost_energy_.size()<<"   "<<"gPost_px: "<<gPost_px_.size()<<"   "<<"gPost_py: "<<gPost_py_.size()<<"   "<<"gPost_pz: "<<gPost_py_.size()<<"   "<<"gPost_pt: "<<gPost_py_.size()<<"   "<<"gPost_eta: "<<gPost_eta_.size()<<"   "<<"gPost_rap: "<<gPost_rap_.size()<<"   "<<"gPost_phi: "<<gPost_phi_.size()<<endl;
+
+  //cout<<"ZMass: "<<ZMass_.size()<<"   "<<"ZPt: "<<ZPt_.size()<<"   "<<"ZEta: "<<ZEta_.size()<<"   "<<"ZRap: "<<ZRap_.size()<<"   "<<"ZPhi: "<<ZPhi_.size()<<endl;
+
+  //cout<<"gPre_energy : "<<gPre_energy_.size()<<"   "<<"gPre_px: "<<gPre_px_.size()<<"   "<<"gPre_py: "<<gPre_py_.size()<<"   "<<"gPre_pz: "<<gPre_py_.size()<<"   "<<"gPre_pt: "<<gPre_py_.size()<<"   "<<"gPre_eta: "<<gPre_eta_.size()<<"   "<<"gPre_rap: "<<gPre_rap_.size()<<"   "<<"gPre_phi: "<<gPre_phi_.size()<<endl;
+
   // Get PV
   edm::Handle<reco::VertexCollection> vertices;
   if( isAOD )
@@ -592,14 +606,14 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   nElectrons_ = 0;
   //cout<<"Electrons: "<<electrons->size()<<"      trigger: "<<doubleElectron<<endl;
-  
+
   // Loop over electrons
   for (size_t i = 0; i < electrons->size(); ++i){
     const auto el = electrons->ptrAt(i);
 
     // Kinematics
     if( el->pt() < 10 ) // keep only electrons above 10 GeV
-    continue;
+      continue;
 
     nElectrons_++;
     //cout<<"pt: "<<el->pt()<<endl;
@@ -678,6 +692,9 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   // Save this electron's info
   electronTree_->Fill();
 
+  double_electron_triggers_in_run.clear();
+  idx_doubleElectron.clear();
+
   // Clear vectors
   pt_f1.clear();
   eta_f1.clear();
@@ -685,7 +702,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   pt_f2.clear();
   eta_f2.clear();
   phi_f2.clear();
-
   ZMass_.clear();
   ZPt_.clear();
   ZEta_.clear();
@@ -733,7 +749,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   isTrue_.clear();
 
   passMediumId_.clear();
-
 }
 // ------------ method called once each job just before starting event loop  ------------
   void 
