@@ -130,6 +130,9 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     edm::Service<TFileService> fs;
     TTree *electronTree_;
 
+    // If MC or not
+    bool misMC;
+
     // Histograms
     TH1F* nevents_;
 
@@ -241,8 +244,8 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     std::vector<pat::TriggerObjectStandAlone> leg1triggerObj;
     std::vector<pat::TriggerObjectStandAlone> leg2triggerObj;
 
-    std::vector<std::string> tagFilterName_;
-    std::vector<std::string> probeFilterName_;
+    //std::vector<std::string> tagFilterName_;
+    //std::vector<std::string> probeFilterName_;
 
     std::vector<bool> passleg1Trigger;
     std::vector<bool> passleg2Trigger;
@@ -260,6 +263,7 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
 {
   nevents_ = fs->make<TH1F>("nevents_","nevents_",2,0,2);
   string_doubleEle = "HLT_Ele17_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v";
+  misMC            = iConfig.getUntrackedParameter<bool>("isMC");
 
   // Prepare tokens for all input collections and objects
 
@@ -272,7 +276,7 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
     (iConfig.getParameter<edm::InputTag>
      ("objects"));
 
-  tagFilterName_ = (iConfig.getParameter<std::vector<std::string>>
+  /*tagFilterName_ = (iConfig.getParameter<std::vector<std::string>>
       ("tagFilterName"));
 
   probeFilterName_ = (iConfig.getParameter<std::vector<std::string>>
@@ -281,7 +285,7 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   if (tagFilterName_.size() != probeFilterName_.size()) {
     std::cout << "Need to specify the same numbers of tag and probe filters." << std::endl;
     abort();
-  }
+  }*/
 
   // Universal tokens for AOD and miniAOD  
   pileupToken_ = consumes<edm::View<PileupSummaryInfo> >
@@ -516,15 +520,16 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   } 
 
   // Get Pileup info
-  Handle<edm::View<PileupSummaryInfo> > pileupHandle;
-  iEvent.getByToken(pileupToken_, pileupHandle);
-  for( auto & puInfoElement : *pileupHandle){
-    if( puInfoElement.getBunchCrossing() == 0 ){
-      nPU_    = puInfoElement.getPU_NumInteractions();
-      nPUTrue_= puInfoElement.getTrueNumInteractions();
+  if(misMC){
+    Handle<edm::View<PileupSummaryInfo> > pileupHandle;
+    iEvent.getByToken(pileupToken_, pileupHandle);
+    for( auto & puInfoElement : *pileupHandle){
+      if( puInfoElement.getBunchCrossing() == 0 ){
+	nPU_    = puInfoElement.getPU_NumInteractions();
+	nPUTrue_= puInfoElement.getTrueNumInteractions();
+      }
     }
   }
-
   // Get rho value
   edm::Handle< double > rhoH;
   iEvent.getByToken(rhoToken_,rhoH);
@@ -544,55 +549,57 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   }
 
   // Get the MC collection
+
   Handle<edm::View<reco::GenParticle> > genParticles;
   if( isAOD )
     iEvent.getByToken(genParticlesToken_,genParticles);
   else
     iEvent.getByToken(genParticlesMiniAODToken_,genParticles);
 
-  nGenElectrons_ = 0;
+  if(misMC){
+    nGenElectrons_ = 0;
 
-  for(size_t i = 0; i < genParticles->size(); ++i){
-    const GenParticle &e = (*genParticles)[i];
-    int id = e.pdgId();
-    int st = e.status();
-    const Candidate * mother = e.mother();
+    for(size_t i = 0; i < genParticles->size(); ++i){
+      const GenParticle &e = (*genParticles)[i];
+      int id = e.pdgId();
+      int st = e.status();
+      const Candidate * mother = e.mother();
 
-    if (fabs(id)==11 && st==1) {
-      gPost_energy_.push_back(e.energy());
-      gPost_px_.push_back(e.px());
-      gPost_py_.push_back(e.py());
-      gPost_pz_.push_back(e.pz());
-      gPost_pt_.push_back(e.pt());
-      gPost_eta_.push_back(e.eta());
-      gPost_rap_.push_back(e.rapidity());
-      gPost_phi_.push_back(e.phi());
-    }
+      if (fabs(id)==11 && st==1) {
+	gPost_energy_.push_back(e.energy());
+	gPost_px_.push_back(e.px());
+	gPost_py_.push_back(e.py());
+	gPost_pz_.push_back(e.pz());
+	gPost_pt_.push_back(e.pt());
+	gPost_eta_.push_back(e.eta());
+	gPost_rap_.push_back(e.rapidity());
+	gPost_phi_.push_back(e.phi());
+      }
 
-    //cout<<"particle no. = "<<i<<"   ID = "<<id<<"   STATUS = "<<st<<endl;
-    //  if (id==23 && st==22){cout<<"id: "<<id<<endl;}
+      //cout<<"particle no. = "<<i<<"   ID = "<<id<<"   STATUS = "<<st<<endl;
+      //  if (id==23 && st==22){cout<<"id: "<<id<<endl;}
 
-    if (fabs(id)==11 && st==23 && mother->pdgId()==23){  
-      nGenElectrons_++;
+      if (fabs(id)==11 && st==23 && mother->pdgId()==23){  
+	nGenElectrons_++;
 
-      ZMass_.push_back(mother->mass());
-      ZPt_.push_back(mother->pt());
-      ZEta_.push_back(mother->eta());
-      ZRap_.push_back(mother->rapidity());
-      ZPhi_.push_back(mother->phi());
+	ZMass_.push_back(mother->mass());
+	ZPt_.push_back(mother->pt());
+	ZEta_.push_back(mother->eta());
+	ZRap_.push_back(mother->rapidity());
+	ZPhi_.push_back(mother->phi());
 
-      gPre_energy_.push_back(e.energy());
-      gPre_px_.push_back(e.px());
-      gPre_py_.push_back(e.py());
-      gPre_pz_.push_back(e.pz());
-      gPre_pt_.push_back(e.pt());
-      gPre_eta_.push_back(e.eta());
-      gPre_rap_.push_back(e.rapidity());
-      gPre_phi_.push_back(e.phi());
+	gPre_energy_.push_back(e.energy());
+	gPre_px_.push_back(e.px());
+	gPre_py_.push_back(e.py());
+	gPre_pz_.push_back(e.pz());
+	gPre_pt_.push_back(e.pt());
+	gPre_eta_.push_back(e.eta());
+	gPre_rap_.push_back(e.rapidity());
+	gPre_phi_.push_back(e.phi());
 
+      }
     }
   }
-
   // Get PV
   edm::Handle<reco::VertexCollection> vertices;
   if( isAOD )
@@ -719,7 +726,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     float abseta = fabs(el->superCluster()->eta());
 
     // The effective areas constants file in the local release or default CMSSW, whichever is found
-    edm::FileInPath eaConstantsFile("EgammaAnalysis/ElectronTools/data/PHYS14/effAreaElectrons_cone03_pfNeuHadronsAndPhotons.txt");
+    edm::FileInPath eaConstantsFile("/ElectronIdentification/data/PHYS14/effAreaElectrons_cone03_pfNeuHadronsAndPhotons.txt");
     EffectiveAreas effectiveAreas(eaConstantsFile.fullPath());
     float eA = effectiveAreas.getEffectiveArea(abseta);
 
@@ -736,7 +743,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     brem_.push_back(el->fbrem());
 
     // Match to generator level truth
-    isTrue_.push_back( matchToTruth( el, genParticles) );
+    if(misMC) isTrue_.push_back( matchToTruth( el, genParticles) );
 
     // ID
     bool isPassVeto  = (*veto_id_decisions)[el];
@@ -761,7 +768,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   double_electron_triggers_in_run.clear();
   idx_doubleElectron.clear();
-  
+
   // Clear vectors
   pt_leg1.clear();
   eta_leg1.clear();
@@ -770,27 +777,30 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   eta_leg2.clear();
   phi_leg2.clear();
 
-  ZMass_.clear();
-  ZPt_.clear();
-  ZEta_.clear();
-  ZRap_.clear();
-  ZPhi_.clear();
-  gPre_energy_.clear();
-  gPre_pt_.clear();
-  gPre_px_.clear();
-  gPre_py_.clear();
-  gPre_pz_.clear();
-  gPre_eta_.clear();
-  gPre_rap_.clear();
-  gPre_phi_.clear();
-  gPost_energy_.clear();
-  gPost_pt_.clear();
-  gPost_px_.clear();
-  gPost_py_.clear();
-  gPost_pz_.clear();
-  gPost_eta_.clear();
-  gPost_rap_.clear();
-  gPost_phi_.clear();
+  if(misMC){
+    ZMass_.clear();
+    ZPt_.clear();
+    ZEta_.clear();
+    ZRap_.clear();
+    ZPhi_.clear();
+    gPre_energy_.clear();
+    gPre_pt_.clear();
+    gPre_px_.clear();
+    gPre_py_.clear();
+    gPre_pz_.clear();
+    gPre_eta_.clear();
+    gPre_rap_.clear();
+    gPre_phi_.clear();
+    gPost_energy_.clear();
+    gPost_pt_.clear();
+    gPost_px_.clear();
+    gPost_py_.clear();
+    gPost_pz_.clear();
+    gPost_eta_.clear();
+    gPost_rap_.clear();
+    gPost_phi_.clear();
+  }
+
   pt_.clear();
   eta_.clear();
   rap_.clear();
