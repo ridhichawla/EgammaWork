@@ -453,6 +453,8 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   Lumi_  = iEvent.luminosityBlock();
   Bunch_ = iEvent.bunchCrossing();
 
+  cout<<"1"<<endl;
+  
   // Get Triggers
   Handle<edm::TriggerResults> triggerHandle;
   iEvent.getByToken(triggerToken_, triggerHandle);
@@ -726,7 +728,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     float abseta = fabs(el->superCluster()->eta());
 
     // The effective areas constants file in the local release or default CMSSW, whichever is found
-    edm::FileInPath eaConstantsFile("/ElectronIdentification/data/PHYS14/effAreaElectrons_cone03_pfNeuHadronsAndPhotons.txt");
+    edm::FileInPath eaConstantsFile("RecoEgamma/ElectronIdentification/data/PHYS14/effAreaElectrons_cone03_pfNeuHadronsAndPhotons.txt");
     EffectiveAreas effectiveAreas(eaConstantsFile.fullPath());
     float eA = effectiveAreas.getEffectiveArea(abseta);
 
