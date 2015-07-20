@@ -130,7 +130,7 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     edm::Service<TFileService> fs;
     TTree *electronTree_;
 
-    // If MC or not
+    // If MC
     bool misMC;
 
     // Histograms
@@ -277,15 +277,15 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
      ("objects"));
 
   /*tagFilterName_ = (iConfig.getParameter<std::vector<std::string>>
-      ("tagFilterName"));
+    ("tagFilterName"));
 
-  probeFilterName_ = (iConfig.getParameter<std::vector<std::string>>
-      ("probeFilterName"));
+    probeFilterName_ = (iConfig.getParameter<std::vector<std::string>>
+    ("probeFilterName"));
 
-  if (tagFilterName_.size() != probeFilterName_.size()) {
+    if (tagFilterName_.size() != probeFilterName_.size()) {
     std::cout << "Need to specify the same numbers of tag and probe filters." << std::endl;
     abort();
-  }*/
+    }*/
 
   // Universal tokens for AOD and miniAOD  
   pileupToken_ = consumes<edm::View<PileupSummaryInfo> >
@@ -453,8 +453,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   Lumi_  = iEvent.luminosityBlock();
   Bunch_ = iEvent.bunchCrossing();
 
-  cout<<"1"<<endl;
-  
   // Get Triggers
   Handle<edm::TriggerResults> triggerHandle;
   iEvent.getByToken(triggerToken_, triggerHandle);
@@ -522,9 +520,9 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   } 
 
   // Get Pileup info
+  Handle<edm::View<PileupSummaryInfo> > pileupHandle;
+  iEvent.getByToken(pileupToken_, pileupHandle);
   if(misMC){
-    Handle<edm::View<PileupSummaryInfo> > pileupHandle;
-    iEvent.getByToken(pileupToken_, pileupHandle);
     for( auto & puInfoElement : *pileupHandle){
       if( puInfoElement.getBunchCrossing() == 0 ){
 	nPU_    = puInfoElement.getPU_NumInteractions();
@@ -532,6 +530,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       }
     }
   }
+
   // Get rho value
   edm::Handle< double > rhoH;
   iEvent.getByToken(rhoToken_,rhoH);
@@ -602,6 +601,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       }
     }
   }
+
   // Get PV
   edm::Handle<reco::VertexCollection> vertices;
   if( isAOD )
@@ -801,6 +801,8 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     gPost_eta_.clear();
     gPost_rap_.clear();
     gPost_phi_.clear();
+
+    isTrue_.clear();
   }
 
   pt_.clear();
@@ -839,7 +841,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   expectedMissingInnerHits_.clear();
   passConversionVeto_.clear();
   brem_.clear();
-  isTrue_.clear();
 
   passVetoId_.clear();
   passLooseId_.clear();
