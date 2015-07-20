@@ -15,8 +15,8 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) )
 #process.GlobalTag.globaltag = 'GR_E_V49::All'                                                 #Data
 
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff")
-#process.GlobalTag.globaltag = cms.string("74X_dataRun2_Prompt_v0")                            #Data
-process.GlobalTag.globaltag = cms.string("MCRUN2_74_V9")                                      #MC
+process.GlobalTag.globaltag = cms.string("74X_dataRun2_Prompt_v0")                            #Data
+#process.GlobalTag.globaltag = cms.string("MCRUN2_74_V9")                                      #MC
 
 inputFilesAOD = cms.untracked.vstring(
     # AOD test files from /DYJetsToLL_M-50_13TeV-madgraph-pythia8/Phys14DR-PU20bx25_PHYS14_25_V1-v1/AODSIM
@@ -31,7 +31,8 @@ inputFilesMiniAOD = cms.untracked.vstring(
     #'/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v3/MINIAODSIM'
     #'/SingleElectron/Run2015B-PromptReco-v1/MINIAOD'
     #'/store/mc/RunIISpring15DR74/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v3/10000/009D49A5-7314-E511-84EF-0025905A605E.root'
-    '/store/data/Run2015B/SingleElectron/MINIAOD/PromptReco-v1/000/251/168/00000/FCB6CB61-BC26-E511-8858-02163E01375B.root'
+    ' /store/data/Run2015B/SingleElectron/MINIAOD/PromptReco-v1/000/251/244/00000/084C9A66-9227-E511-91E0-02163E0133F0.root'
+    #'/store/data/Run2015B/SingleElectron/MINIAOD/PromptReco-v1/000/251/168/00000/FCB6CB61-BC26-E511-8858-02163E01375B.root'
     )
 
 #
