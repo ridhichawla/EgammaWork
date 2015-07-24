@@ -69,6 +69,9 @@ Implementation:
 
 #include "DataFormats/PatCandidates/interface/TriggerObjectStandAlone.h"
 
+#include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
+
 #include "/afs/cern.ch/work/r/rchawla/private/CMSSW_7_4_0/src/EgammaWork/ElectronNtupler/plugins/utils.h"
 //#include "FWCore/ParameterSet/interface/FileInPath.h"
 //#include "/afs/cern.ch/work/r/rchawla/private/CMSSW_7_4_0/src/EgammaWork/ElectronNtupler/plugins/FileInPath.h"
@@ -149,11 +152,16 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     Float_t rho_;      // the rho variable
 
     // Trigger
+    std::string string_singleEle;
     std::string string_doubleEle;
     std::vector<std::string> hlNames_;
+    std::vector<std::string> single_electron_triggers_in_run;
     std::vector<std::string> double_electron_triggers_in_run;
-    std::vector<int> idx_doubleElectron;
+    bool singleElectron;
     bool doubleElectron;
+
+    std::vector<int> idx_singleElectron;
+    std::vector<int> idx_doubleElectron;
 
     // all electron variables
     Int_t nElectrons_;
@@ -189,6 +197,7 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     std::vector<Float_t> phi_;
     std::vector<Float_t> energy_;
     std::vector<Float_t> mass_;
+    std::vector<Float_t> charge_;
 
     std::vector<Float_t> enSC_;
     std::vector<Float_t> preEnSC_;
@@ -241,14 +250,18 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     std::vector<double> eta_leg2;
     std::vector<double> phi_leg2;
 
-    std::vector<pat::TriggerObjectStandAlone> leg1triggerObj;
-    std::vector<pat::TriggerObjectStandAlone> leg2triggerObj;
+    std::vector<double> pt_SE;
+    std::vector<double> eta_SE;
+    std::vector<double> phi_SE;
+
+    //std::vector<pat::TriggerObjectStandAlone> leg1triggerObj;
+    //std::vector<pat::TriggerObjectStandAlone> leg2triggerObj;
 
     //std::vector<std::string> tagFilterName_;
     //std::vector<std::string> probeFilterName_;
 
-    std::vector<bool> passleg1Trigger;
-    std::vector<bool> passleg2Trigger;
+    //std::vector<bool> passleg1Trigger;
+    //std::vector<bool> passleg2Trigger;
 
     double DeltaR(const pat::Electron& e, std::vector<pat::TriggerObjectStandAlone> object);
 };
@@ -262,6 +275,7 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   mvaCategoriesMapToken_(consumes<edm::ValueMap<int> >(iConfig.getParameter<edm::InputTag>("mvaCategoriesMap")))
 {
   nevents_ = fs->make<TH1F>("nevents_","nevents_",2,0,2);
+  string_singleEle = "HLT_Ele27_eta2p1_WPLoose_Gsf_v";
   string_doubleEle = "HLT_Ele17_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v";
   misMC            = iConfig.getUntrackedParameter<bool>("isMC");
 
@@ -353,6 +367,7 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronTree_->Branch("nPUTrue"    ,  &nPUTrue_ , "nPUTrue/I");
   electronTree_->Branch("rho"        ,  &rho_ , "rho/F");
 
+  electronTree_->Branch("singleElectron"    ,  &singleElectron    );
   electronTree_->Branch("doubleElectron"    ,  &doubleElectron    );
 
   electronTree_->Branch("pt_leg1"    ,  &pt_leg1    );
@@ -361,6 +376,9 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronTree_->Branch("pt_leg2"    ,  &pt_leg2    );
   electronTree_->Branch("eta_leg2"   ,  &eta_leg2   );
   electronTree_->Branch("phi_leg2"   ,  &phi_leg2   );
+  electronTree_->Branch("pt_SE"    ,  &pt_SE    );
+  electronTree_->Branch("eta_SE"   ,  &eta_SE   );
+  electronTree_->Branch("phi_SE"   ,  &phi_SE   );
 
   electronTree_->Branch("nEle"    ,  &nElectrons_ , "nEle/I");
   electronTree_->Branch("nGenEle"    ,  &nGenElectrons_ , "nGenEle/I");
@@ -391,6 +409,7 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronTree_->Branch("phi"    ,  &phi_    );
   electronTree_->Branch("energy"    ,  &energy_    );
   electronTree_->Branch("mass"    ,  &mass_    );
+  electronTree_->Branch("charge"    ,  &charge_    );
   electronTree_->Branch("enSC" ,  &enSC_ );
   electronTree_->Branch("preEnSC" ,  &preEnSC_ );
   electronTree_->Branch("rawEnSC" ,  &rawEnSC_ );
@@ -453,6 +472,23 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   Lumi_  = iEvent.luminosityBlock();
   Bunch_ = iEvent.bunchCrossing();
 
+  //cout<<"1"<<endl;
+
+  Handle<GenEventInfoProduct> genEvtInfo;
+  iEvent.getByLabel("generator", genEvtInfo);
+
+  std::vector<double> evtWeights = genEvtInfo->weights();
+  double theWeight = genEvtInfo->weight();
+
+  Handle<LHEEventProduct> EvtHandle;
+  iEvent.getByLabel("externalLHEProducer", EvtHandle);
+
+  int whichWeight = 1;
+  theWeight *= EvtHandle->weights()[whichWeight].wgt/EvtHandle->originalXWGTUP(); 
+  
+  cout<<"Final Weights: "<<theWeight<<endl;
+  
+  
   // Get Triggers
   Handle<edm::TriggerResults> triggerHandle;
   iEvent.getByToken(triggerToken_, triggerHandle);
@@ -462,16 +498,19 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   const edm::TriggerNames & triggerNames = iEvent.triggerNames(*triggerHandle);
 
-  std::vector<std::string> filterLabels;
-  std::string TagFilter("hltEle17Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg1Filter");
-  std::string ProbeFilter("hltEle17Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg2Filter");
+  //std::vector<std::string> filterLabels;
+  std::string DETagFilter("hltEle17Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg1Filter");
+  std::string DEProbeFilter("hltEle17Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg2Filter");
+  std::string SEFilter("hltEle27WPLooseGsfTrackIsoFilter");
 
-  /*for (unsigned int i=0; i<triggerHandle->size(); i++)
-    {
+  /*bool trigResult = false;
+
+  for (unsigned int i=0; i<triggerHandle->size(); i++)
+  {
     std::string trigName = triggerNames.triggerName(i);
     trigResult = triggerHandle->accept(i);
     cout<<"Name of Trigger = "<<trigName<<"   Trigger Result = "<<trigResult<<"   Trigger Number = "<<i<<endl;
-    }*/
+  }*/
 
   //bool tagPass = false;
   //bool probePass = false;
@@ -479,18 +518,26 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   for (pat::TriggerObjectStandAlone obj : *triggerObjects) {
     obj.unpackPathNames(triggerNames);
     for (unsigned j = 0; j < obj.filterLabels().size(); ++j){
-      if((TagFilter.compare(obj.filterLabels()[j]))==0){
+      //cout<<obj.filterLabels()[j]<<endl;
+      if((DETagFilter.compare(obj.filterLabels()[j]))==0){
 	//tagPass = true;
 	pt_leg1.push_back(obj.pt());
 	eta_leg1.push_back(obj.eta());
 	phi_leg1.push_back(obj.phi());
       }
 
-      if((ProbeFilter.compare(obj.filterLabels()[j]))==0){
+      if((DEProbeFilter.compare(obj.filterLabels()[j]))==0){
 	//probePass = true;
 	pt_leg2.push_back(obj.pt());
 	eta_leg2.push_back(obj.eta());
 	phi_leg2.push_back(obj.phi());
+      }
+
+      if((SEFilter.compare(obj.filterLabels()[j]))==0){
+	//probePass = true;
+	pt_SE.push_back(obj.pt());
+	eta_SE.push_back(obj.eta());
+	phi_SE.push_back(obj.phi());
       }
 
     }
@@ -498,17 +545,32 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   hlNames_ = triggerNames.triggerNames();
   int ntriggers = hlNames_.size();
+  //cout<<"ntriggers: "<<ntriggers<<endl;
   Int_t hsize = Int_t(triggerHandle->size());
+  //cout<<"hsize: "<<hsize<<endl;
 
   for (int itrigger=0; itrigger<ntriggers; itrigger++)
   {
     std::string hltname(triggerNames.triggerName(itrigger));
 
+    size_t found_singleEle = hltname.find(string_singleEle);
     size_t found_doubleEle = hltname.find(string_doubleEle);
+
+    if(found_singleEle !=string::npos){
+      single_electron_triggers_in_run.push_back(hltname);
+    }
 
     if(found_doubleEle !=string::npos){
       double_electron_triggers_in_run.push_back(hltname);
     }
+  }
+
+  for ( int itrigger = 0 ; itrigger < (int)single_electron_triggers_in_run.size(); itrigger++){
+    idx_singleElectron.push_back(triggerNames.triggerIndex(single_electron_triggers_in_run[itrigger]));
+    if(idx_singleElectron.size()>0)
+      if(idx_singleElectron[itrigger] < hsize){
+	singleElectron = (triggerHandle->accept(idx_singleElectron[itrigger]));
+      }
   }
 
   for ( int itrigger = 0 ; itrigger < (int)double_electron_triggers_in_run.size(); itrigger++){
@@ -517,8 +579,35 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       if(idx_doubleElectron[itrigger] < hsize){
 	doubleElectron = (triggerHandle->accept(idx_doubleElectron[itrigger]));
       }
-  } 
+  }
 
+  /*for (int itrigger=0; itrigger<ntriggers; itrigger++)
+  {
+    std::string hltname(triggerNames.triggerName(itrigger));
+    //cout<<"hltname: "<<hltname<<endl;
+    size_t found_doubleEle = hltname.find(string_doubleEle);
+    //cout<<"found_doubleEle: "<<found_doubleEle<<endl;
+    if(found_doubleEle !=string::npos){
+      double_electron_triggers_in_run.push_back(hltname);
+    }
+  }
+
+  //cout<<"hltname: "<<hltname<<endl;
+  //cout<<"found_doubleEle: "<<found_doubleEle<<endl;
+  //cout<<"size: "<<(int)double_electron_triggers_in_run.size()<<endl;
+  for ( int itrigger = 0 ; itrigger < (int)double_electron_triggers_in_run.size(); itrigger++){
+
+    idx_doubleElectron.push_back(triggerNames.triggerIndex(double_electron_triggers_in_run[itrigger]));
+    //cout<<"idx_doubleElectron: "<<idx_doubleElectron[itrigger]<<endl;
+    //cout<<"idx_doubleElectron.size(): "<<idx_doubleElectron.size()<<endl;
+    if(idx_doubleElectron.size()>0)
+      //cout<<"idx_doubleElectron.size(): "<<idx_doubleElectron.size()<<endl;
+      if(idx_doubleElectron[itrigger] < hsize){
+	//cout<<"idx_doubleElectron[itrigger]: "<<idx_doubleElectron[itrigger]<<endl;
+	doubleElectron = (triggerHandle->accept(idx_doubleElectron[itrigger]));
+      }
+  } 
+*/
   // Get Pileup info
   Handle<edm::View<PileupSummaryInfo> > pileupHandle;
   iEvent.getByToken(pileupToken_, pileupHandle);
@@ -680,6 +769,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     phi_.push_back( el->phi() );
     energy_.push_back( el->energy() );
     mass_.push_back( el->mass() );
+    charge_.push_back( el->charge() );
 
     double R = sqrt(el->superCluster()->x()*el->superCluster()->x() + el->superCluster()->y()*el->superCluster()->y() +el->superCluster()->z()*el->superCluster()->z());
     double Rt = sqrt(el->superCluster()->x()*el->superCluster()->x() + el->superCluster()->y()*el->superCluster()->y());
@@ -768,7 +858,10 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   // Save this electron's info
   electronTree_->Fill();
 
+  hlNames_.clear();
+  single_electron_triggers_in_run.clear();
   double_electron_triggers_in_run.clear();
+  idx_singleElectron.clear();
   idx_doubleElectron.clear();
 
   // Clear vectors
@@ -778,6 +871,10 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   pt_leg2.clear();
   eta_leg2.clear();
   phi_leg2.clear();
+
+  pt_SE.clear();
+  eta_SE.clear();
+  phi_SE.clear();
 
   if(misMC){
     ZMass_.clear();
@@ -811,6 +908,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   phi_.clear();
   energy_.clear();
   mass_.clear();
+  charge_.clear();
 
   enSC_.clear();
   preEnSC_.clear();
