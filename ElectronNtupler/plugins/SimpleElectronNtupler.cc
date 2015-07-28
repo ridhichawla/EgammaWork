@@ -138,6 +138,11 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
 
     // Histograms
     TH1F* nevents_;
+    //TH1F* Weights_;
+
+    // Weights for MC@NLO
+    double theWeight;
+    int weightsP, weightsN;
 
     // General
     Double_t RunNo_, EvtNo_, Lumi_, Bunch_;
@@ -275,9 +280,12 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   mvaCategoriesMapToken_(consumes<edm::ValueMap<int> >(iConfig.getParameter<edm::InputTag>("mvaCategoriesMap")))
 {
   nevents_ = fs->make<TH1F>("nevents_","nevents_",2,0,2);
+  //Weights_ = fs->make<TH1F>("Weights_","Weights_",5000,-5000,5000); 
   string_singleEle = "HLT_Ele27_eta2p1_WPLoose_Gsf_v";
   string_doubleEle = "HLT_Ele17_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v";
   misMC            = iConfig.getUntrackedParameter<bool>("isMC");
+  weightsP = 0;
+  weightsN = 0;
 
   // Prepare tokens for all input collections and objects
 
@@ -360,6 +368,10 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronTree_->Branch("Lumi", &Lumi_, "Lumi/D");
   electronTree_->Branch("Bunch", &Bunch_, "Bunch/D");
 
+  electronTree_->Branch("weightsP", &weightsP, "weighstP/I");
+  electronTree_->Branch("weightsN", &weightsN, "weightsN/I");
+  electronTree_->Branch("theWeight", &theWeight, "theWeight/D");
+
   electronTree_->Branch("pvNTracks"    ,  &pvNTracks_ , "pvNTracks/I");
 
   electronTree_->Branch("nPV"        ,  &nPV_     , "nPV/I");
@@ -403,6 +415,7 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronTree_->Branch("gPost_eta"    ,  &gPost_eta_    );
   electronTree_->Branch("gPost_rap"    ,  &gPost_rap_    );
   electronTree_->Branch("gPost_phi"    ,  &gPost_phi_    );
+
   electronTree_->Branch("pt"    ,  &pt_    );
   electronTree_->Branch("eta"    ,  &eta_    );
   electronTree_->Branch("rap"    ,  &rap_    );
@@ -419,7 +432,7 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronTree_->Branch("full5x5_sigmaIetaIeta", &full5x5_sigmaIetaIeta_);
   electronTree_->Branch("E1x5" ,  &E1x5_ );
   electronTree_->Branch("E2x5" ,  &E2x5_ );
-  electronTree_->Branch("E2x5" ,  &E2x5_ );
+  electronTree_->Branch("E5x5" ,  &E5x5_ );
   electronTree_->Branch("hOverE",  &hOverE_);
   electronTree_->Branch("etaScWidth" ,  &etaScWidth_ );
   electronTree_->Branch("phiScWidth" ,  &phiScWidth_ );
@@ -474,21 +487,27 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   //cout<<"1"<<endl;
 
-  Handle<GenEventInfoProduct> genEvtInfo;
-  iEvent.getByLabel("generator", genEvtInfo);
+  if(misMC){
+    Handle<GenEventInfoProduct> genEvtInfo;
+    iEvent.getByLabel("generator", genEvtInfo);
 
-  std::vector<double> evtWeights = genEvtInfo->weights();
-  double theWeight = genEvtInfo->weight();
+    std::vector<double> evtWeights = genEvtInfo->weights();
+    theWeight = genEvtInfo->weight();
 
-  Handle<LHEEventProduct> EvtHandle;
-  iEvent.getByLabel("externalLHEProducer", EvtHandle);
+    Handle<LHEEventProduct> EvtHandle;
+    iEvent.getByLabel("externalLHEProducer", EvtHandle);
 
-  int whichWeight = 1;
-  theWeight *= EvtHandle->weights()[whichWeight].wgt/EvtHandle->originalXWGTUP(); 
-  
-  cout<<"Final Weights: "<<theWeight<<endl;
-  
-  
+    int whichWeight = 1;
+    theWeight *= EvtHandle->weights()[whichWeight].wgt/EvtHandle->originalXWGTUP(); 
+
+    //Weights_->Fill(theWeight);
+
+    if(theWeight >= 1) ++weightsP;
+    else if(theWeight < 1) ++weightsN;
+  }
+  //cout<<"weightsP: "<<weightsP<<"   "<<"weightsN: "<<weightsN<<endl;
+  //cout<<"Final Weights: "<<theWeight<<endl;
+
   // Get Triggers
   Handle<edm::TriggerResults> triggerHandle;
   iEvent.getByToken(triggerToken_, triggerHandle);
@@ -552,9 +571,10 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   for (int itrigger=0; itrigger<ntriggers; itrigger++)
   {
     std::string hltname(triggerNames.triggerName(itrigger));
-
+    //cout<<"hltname: "<<hltname<<endl;
     size_t found_singleEle = hltname.find(string_singleEle);
     size_t found_doubleEle = hltname.find(string_doubleEle);
+    //cout<<"found_doubleEle: "<<found_doubleEle<<endl;
 
     if(found_singleEle !=string::npos){
       single_electron_triggers_in_run.push_back(hltname);
@@ -573,30 +593,8 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       }
   }
 
-  for ( int itrigger = 0 ; itrigger < (int)double_electron_triggers_in_run.size(); itrigger++){
-    idx_doubleElectron.push_back(triggerNames.triggerIndex(double_electron_triggers_in_run[itrigger]));
-    if(idx_doubleElectron.size()>0)
-      if(idx_doubleElectron[itrigger] < hsize){
-	doubleElectron = (triggerHandle->accept(idx_doubleElectron[itrigger]));
-      }
-  }
-
-  /*for (int itrigger=0; itrigger<ntriggers; itrigger++)
-  {
-    std::string hltname(triggerNames.triggerName(itrigger));
-    //cout<<"hltname: "<<hltname<<endl;
-    size_t found_doubleEle = hltname.find(string_doubleEle);
-    //cout<<"found_doubleEle: "<<found_doubleEle<<endl;
-    if(found_doubleEle !=string::npos){
-      double_electron_triggers_in_run.push_back(hltname);
-    }
-  }
-
-  //cout<<"hltname: "<<hltname<<endl;
-  //cout<<"found_doubleEle: "<<found_doubleEle<<endl;
   //cout<<"size: "<<(int)double_electron_triggers_in_run.size()<<endl;
   for ( int itrigger = 0 ; itrigger < (int)double_electron_triggers_in_run.size(); itrigger++){
-
     idx_doubleElectron.push_back(triggerNames.triggerIndex(double_electron_triggers_in_run[itrigger]));
     //cout<<"idx_doubleElectron: "<<idx_doubleElectron[itrigger]<<endl;
     //cout<<"idx_doubleElectron.size(): "<<idx_doubleElectron.size()<<endl;
@@ -606,8 +604,8 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	//cout<<"idx_doubleElectron[itrigger]: "<<idx_doubleElectron[itrigger]<<endl;
 	doubleElectron = (triggerHandle->accept(idx_doubleElectron[itrigger]));
       }
-  } 
-*/
+  }
+
   // Get Pileup info
   Handle<edm::View<PileupSummaryInfo> > pileupHandle;
   iEvent.getByToken(pileupToken_, pileupHandle);
@@ -639,7 +637,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   }
 
   // Get the MC collection
-
   Handle<edm::View<reco::GenParticle> > genParticles;
   if( isAOD )
     iEvent.getByToken(genParticlesToken_,genParticles);
@@ -701,21 +698,19 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   if (vertices->empty()) return; // skip the event if no PV found
   //const reco::Vertex &pv = vertices->front();
   nPV_    = vertices->size();
+  //cout<<"nPV: "<<nPV_<<endl;
 
   // Find the first vertex in the collection that passes  good quality criteria
   VertexCollection::const_iterator firstGoodVertex = vertices->end();
   int firstGoodVertexIdx = 0;
-  for (VertexCollection::const_iterator vtx = vertices->begin(); 
-      vtx != vertices->end(); ++vtx, ++firstGoodVertexIdx) {
+  for (VertexCollection::const_iterator vtx = vertices->begin(); vtx != vertices->end(); ++vtx, ++firstGoodVertexIdx) {
     // Replace isFake() for miniAOD because it requires tracks and miniAOD vertices don't have tracks:
     // Vertex.h: bool isFake() const {return (chi2_==0 && ndof_==0 && tracks_.empty());}
     bool isFake = vtx->isFake();
     if( !isAOD )
       isFake = (vtx->chi2()==0 && vtx->ndof()==0);
     // Check the goodness
-    if ( !isFake
-	&&  vtx->ndof()>=4. && vtx->position().Rho()<=2.0
-	&& fabs(vtx->position().Z())<=24.0) {
+    if ( !isFake && vtx->ndof()>=4. && vtx->position().Rho()<=2.0 && fabs(vtx->position().Z())<=24.0) {
       firstGoodVertex = vtx;
       break;
     }
