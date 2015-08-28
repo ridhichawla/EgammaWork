@@ -135,6 +135,7 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
 
     // If MC
     bool misMC;
+    bool misPythia;
 
     // Histograms
     TH1F* nevents_;
@@ -157,15 +158,19 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     Float_t rho_;      // the rho variable
 
     // Trigger
-    std::string string_singleEle;
+    std::string string_singleEle_mc;
+    std::string string_singleEle_data;
     std::string string_doubleEle;
     std::vector<std::string> hlNames_;
-    std::vector<std::string> single_electron_triggers_in_run;
+    std::vector<std::string> single_electron_triggers_in_run_mc;
+    std::vector<std::string> single_electron_triggers_in_run_data;
     std::vector<std::string> double_electron_triggers_in_run;
-    bool singleElectron;
+    bool singleElectron_mc;
+    bool singleElectron_data;
     bool doubleElectron;
 
-    std::vector<int> idx_singleElectron;
+    std::vector<int> idx_singleElectron_mc;
+    std::vector<int> idx_singleElectron_data;
     std::vector<int> idx_doubleElectron;
 
     // all electron variables
@@ -247,6 +252,8 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     std::vector<Float_t> mvaValue_;
     std::vector<Int_t>   mvaCategory_;
 
+    std::vector<Int_t> eleEcalDrivenSeed_;
+
     std::vector<double> pt_leg1;
     std::vector<double> eta_leg1;
     std::vector<double> phi_leg1;
@@ -255,9 +262,13 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     std::vector<double> eta_leg2;
     std::vector<double> phi_leg2;
 
-    std::vector<double> pt_SE;
-    std::vector<double> eta_SE;
-    std::vector<double> phi_SE;
+    std::vector<double> pt_SE_MC;
+    std::vector<double> eta_SE_MC;
+    std::vector<double> phi_SE_MC;
+
+    std::vector<double> pt_SE_Data;
+    std::vector<double> eta_SE_Data;
+    std::vector<double> phi_SE_Data;
 
     //std::vector<pat::TriggerObjectStandAlone> leg1triggerObj;
     //std::vector<pat::TriggerObjectStandAlone> leg2triggerObj;
@@ -281,9 +292,12 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
 {
   nevents_ = fs->make<TH1F>("nevents_","nevents_",2,0,2);
   //Weights_ = fs->make<TH1F>("Weights_","Weights_",5000,-5000,5000); 
-  string_singleEle = "HLT_Ele27_eta2p1_WPLoose_Gsf_v";
+  //string_singleEle = "HLT_Ele27_eta2p1_WPLoose_Gsf_v";
+  string_singleEle_mc   = "HLT_Ele23_WP75_Gsf_v";
+  string_singleEle_data = "HLT_Ele23_WPLoose_Gsf_v";
   string_doubleEle = "HLT_Ele17_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v";
   misMC            = iConfig.getUntrackedParameter<bool>("isMC");
+  misPythia        = iConfig.getUntrackedParameter<bool>("isPythia");
   weightsP = 0;
   weightsN = 0;
 
@@ -379,7 +393,8 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronTree_->Branch("nPUTrue"    ,  &nPUTrue_ , "nPUTrue/I");
   electronTree_->Branch("rho"        ,  &rho_ , "rho/F");
 
-  electronTree_->Branch("singleElectron"    ,  &singleElectron    );
+  electronTree_->Branch("singleElectron_mc"    ,  &singleElectron_mc    );
+  electronTree_->Branch("singleElectron_data"    ,  &singleElectron_data    );
   electronTree_->Branch("doubleElectron"    ,  &doubleElectron    );
 
   electronTree_->Branch("pt_leg1"    ,  &pt_leg1    );
@@ -388,9 +403,12 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronTree_->Branch("pt_leg2"    ,  &pt_leg2    );
   electronTree_->Branch("eta_leg2"   ,  &eta_leg2   );
   electronTree_->Branch("phi_leg2"   ,  &phi_leg2   );
-  electronTree_->Branch("pt_SE"    ,  &pt_SE    );
-  electronTree_->Branch("eta_SE"   ,  &eta_SE   );
-  electronTree_->Branch("phi_SE"   ,  &phi_SE   );
+  electronTree_->Branch("pt_SE_MC"    ,  &pt_SE_MC    );
+  electronTree_->Branch("eta_SE_MC"   ,  &eta_SE_MC   );
+  electronTree_->Branch("phi_SE_MC"   ,  &phi_SE_MC   );
+  electronTree_->Branch("pt_SE_Data"    ,  &pt_SE_Data    );
+  electronTree_->Branch("eta_SE_Data"   ,  &eta_SE_Data   );
+  electronTree_->Branch("phi_SE_Data"   ,  &phi_SE_Data   );
 
   electronTree_->Branch("nEle"    ,  &nElectrons_ , "nEle/I");
   electronTree_->Branch("nGenEle"    ,  &nGenElectrons_ , "nGenEle/I");
@@ -460,6 +478,7 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronTree_->Branch("passTightId"  ,  &passTightId_ );
   electronTree_->Branch("mvaVal" ,  &mvaValue_ );
   electronTree_->Branch("mvaCat" ,  &mvaCategory_ );
+  electronTree_->Branch("eleEcalDrivenSeed", &eleEcalDrivenSeed_);
 
 }
 
@@ -487,7 +506,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   //cout<<"1"<<endl;
 
-  if(misMC){
+  if(misMC && !misPythia){
     Handle<GenEventInfoProduct> genEvtInfo;
     iEvent.getByLabel("generator", genEvtInfo);
 
@@ -520,7 +539,8 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   //std::vector<std::string> filterLabels;
   std::string DETagFilter("hltEle17Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg1Filter");
   std::string DEProbeFilter("hltEle17Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg2Filter");
-  std::string SEFilter("hltEle27WPLooseGsfTrackIsoFilter");
+  std::string SEMCFilter("hltEle23WP75GsfTrackIsoFilter");
+  std::string SEDataFilter("hltEle23WPLooseGsfTrackIsoFilter");
 
   /*bool trigResult = false;
 
@@ -552,11 +572,18 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	phi_leg2.push_back(obj.phi());
       }
 
-      if((SEFilter.compare(obj.filterLabels()[j]))==0){
+      if((SEMCFilter.compare(obj.filterLabels()[j]))==0){
 	//probePass = true;
-	pt_SE.push_back(obj.pt());
-	eta_SE.push_back(obj.eta());
-	phi_SE.push_back(obj.phi());
+	pt_SE_MC.push_back(obj.pt());
+	eta_SE_MC.push_back(obj.eta());
+	phi_SE_MC.push_back(obj.phi());
+      }
+
+      if((SEDataFilter.compare(obj.filterLabels()[j]))==0){
+        //probePass = true;
+        pt_SE_Data.push_back(obj.pt());
+        eta_SE_Data.push_back(obj.eta());
+        phi_SE_Data.push_back(obj.phi());
       }
 
     }
@@ -572,24 +599,37 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   {
     std::string hltname(triggerNames.triggerName(itrigger));
     //cout<<"hltname: "<<hltname<<endl;
-    size_t found_singleEle = hltname.find(string_singleEle);
+    size_t found_singleEle_mc   = hltname.find(string_singleEle_mc);
+    size_t found_singleEle_data = hltname.find(string_singleEle_data);
     size_t found_doubleEle = hltname.find(string_doubleEle);
     //cout<<"found_doubleEle: "<<found_doubleEle<<endl;
 
-    if(found_singleEle !=string::npos){
-      single_electron_triggers_in_run.push_back(hltname);
+    if(found_singleEle_mc !=string::npos){
+      single_electron_triggers_in_run_mc.push_back(hltname);
     }
 
+    if(found_singleEle_data !=string::npos){
+      single_electron_triggers_in_run_data.push_back(hltname);
+    }
+    
     if(found_doubleEle !=string::npos){
       double_electron_triggers_in_run.push_back(hltname);
     }
   }
 
-  for ( int itrigger = 0 ; itrigger < (int)single_electron_triggers_in_run.size(); itrigger++){
-    idx_singleElectron.push_back(triggerNames.triggerIndex(single_electron_triggers_in_run[itrigger]));
-    if(idx_singleElectron.size()>0)
-      if(idx_singleElectron[itrigger] < hsize){
-	singleElectron = (triggerHandle->accept(idx_singleElectron[itrigger]));
+  for ( int itrigger = 0 ; itrigger < (int)single_electron_triggers_in_run_mc.size(); itrigger++){
+    idx_singleElectron_mc.push_back(triggerNames.triggerIndex(single_electron_triggers_in_run_mc[itrigger]));
+    if(idx_singleElectron_mc.size()>0)
+      if(idx_singleElectron_mc[itrigger] < hsize){
+	singleElectron_mc = (triggerHandle->accept(idx_singleElectron_mc[itrigger]));
+      }
+  }
+
+  for ( int itrigger = 0 ; itrigger < (int)single_electron_triggers_in_run_data.size(); itrigger++){
+    idx_singleElectron_data.push_back(triggerNames.triggerIndex(single_electron_triggers_in_run_data[itrigger]));
+    if(idx_singleElectron_data.size()>0)
+      if(idx_singleElectron_data[itrigger] < hsize){
+	singleElectron_data = (triggerHandle->accept(idx_singleElectron_data[itrigger]));
       }
   }
 
@@ -746,18 +786,17 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   iEvent.getByToken(mvaCategoriesMapToken_,mvaCategories);
 
   nElectrons_ = 0;
-  //cout<<"Electrons: "<<electrons->size()<<"      trigger: "<<doubleElectron<<endl;
-
+  cout<<"Event: "<<iEvent.id().event()<<"   "<<"Electrons: "<<electrons->size()<<endl;//"      trigger: "<<doubleElectron<<endl;
+  
   // Loop over electrons
   for (size_t i = 0; i < electrons->size(); ++i){
     const auto el = electrons->ptrAt(i);
 
     // Kinematics
-    if( el->pt() < 10 ) // keep only electrons above 10 GeV
-      continue;
+    //if( el->pt() < 10 ) continue; // keep only electrons above 10 GeV
 
     nElectrons_++;
-    //cout<<"pt: "<<el->pt()<<endl;
+    cout<<"pt: "<<el->pt()<<endl;
     pt_.push_back( el->pt() );
     eta_.push_back( el->eta() );
     rap_.push_back( el->rapidity() );
@@ -848,15 +887,21 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     eleInBarrel_.push_back(el->isEB());
     eleInEndcap_.push_back(el->isEE());
 
+    // ECAL driven
+    eleEcalDrivenSeed_.push_back(el->ecalDrivenSeed());
+    //cout<<"ECAL driven: "<<el->ecalDrivenSeed()<<endl;
+
   }
 
   // Save this electron's info
   electronTree_->Fill();
 
   hlNames_.clear();
-  single_electron_triggers_in_run.clear();
+  single_electron_triggers_in_run_mc.clear();
+  single_electron_triggers_in_run_data.clear();
   double_electron_triggers_in_run.clear();
-  idx_singleElectron.clear();
+  idx_singleElectron_mc.clear();
+  idx_singleElectron_data.clear();
   idx_doubleElectron.clear();
 
   // Clear vectors
@@ -867,9 +912,13 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   eta_leg2.clear();
   phi_leg2.clear();
 
-  pt_SE.clear();
-  eta_SE.clear();
-  phi_SE.clear();
+  pt_SE_MC.clear();
+  eta_SE_MC.clear();
+  phi_SE_MC.clear();
+
+  pt_SE_Data.clear();
+  eta_SE_Data.clear();
+  phi_SE_Data.clear();
 
   if(misMC){
     ZMass_.clear();
@@ -941,6 +990,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   passTightId_.clear();
   mvaCategory_.clear();
   mvaValue_.clear();
+  eleEcalDrivenSeed_.clear();
 
 }
 // ------------ method called once each job just before starting event loop  ------------
