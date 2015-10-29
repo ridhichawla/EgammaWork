@@ -275,12 +275,16 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
 
     // all muon variables
     Int_t nMuons_;
+
+    std::vector<int>    isGLBmuon_;
+    std::vector<int>    isPFmuon_;
+
     std::vector<double> ptMuon_;
     std::vector<double> etaMuon_;
     std::vector<double> phiMuon_;
     std::vector<double> energyMuon_;
     std::vector<double> chargeMuon_;
-    
+
     std::vector<double> normchi2Muon_;
     std::vector<double> nhitsMuon_;
     std::vector<double> hitsMuon_;
@@ -289,6 +293,10 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     std::vector<double> trackerHitsMuon_;
     std::vector<double> pixelHitsMuon_;
     std::vector<double> trackerLayersMuon_;
+
+    std::vector<double> nMatchesMuon_;
+    std::vector<double> dxyVtxMuon_;
+    std::vector<double> dzVtxMuon_;
 
     //std::vector<pat::TriggerObjectStandAlone> leg1triggerObj;
     //std::vector<pat::TriggerObjectStandAlone> leg2triggerObj;
@@ -378,7 +386,7 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   muonsMiniAODToken_        = mayConsume<edm::View<pat::Muon> >
     (iConfig.getParameter<edm::InputTag>
      ("muonsMiniAOD"));
-  
+
   electronsMiniAODToken_    = mayConsume<edm::View<reco::GsfElectron> >
     (iConfig.getParameter<edm::InputTag>
      ("electronsMiniAOD"));
@@ -504,8 +512,11 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   //electronTree_->Branch("mvaCat" ,  &mvaCategory_ );
   electronTree_->Branch("eleEcalDrivenSeed", &eleEcalDrivenSeed_);
 
+  electronTree_->Branch("isGLBmuon", &isGLBmuon_);
+  electronTree_->Branch("isPFmuon", &isPFmuon_);
+
   electronTree_->Branch("nMuons", &nMuons_);
-  
+
   electronTree_->Branch("ptMuon", &ptMuon_);
   electronTree_->Branch("etaMuon", &etaMuon_);
   electronTree_->Branch("phiMuon", &phiMuon_);
@@ -520,6 +531,9 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronTree_->Branch("trackerHitsMuon", &trackerHitsMuon_);
   electronTree_->Branch("pixelHitsMuon", &pixelHitsMuon_);
   electronTree_->Branch("trackerLayersMuon", &trackerLayersMuon_);
+  electronTree_->Branch("nMatchesMuon", &nMatchesMuon_);
+  electronTree_->Branch("dxyVtxMuon", &dxyVtxMuon_);
+  electronTree_->Branch("dzVtxMuon", &dzVtxMuon_);
 
 }
 
@@ -936,13 +950,19 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   edm::Handle<edm::View<pat::Muon> > muons;
   iEvent.getByToken(muonsMiniAODToken_,muons);
-  
+
   cout<<"Muons: "<<muons->size()<<endl;
   nMuons_ = 0;
-  
+
   for(unsigned i=0; i < muons->size();++i ) {
     const auto mu = muons->ptrAt(i);
     nMuons_++;
+
+    if(mu->isGlobalMuon())
+      isGLBmuon_.push_back(1);
+
+    if(mu->isPFMuon())
+      isPFmuon_.push_back(1);
 
     // Kinematics
     ptMuon_.push_back(mu->pt());
@@ -952,11 +972,14 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     chargeMuon_.push_back(mu->charge());
 
     cout<<"pt: "<<mu->pt()<<"   "<<"eta: "<<mu->eta()<<"   "<<"phi: "<<mu->phi()<<"   "<<"energy: "<<mu->energy()<<"   "<<"charge: "<<mu->charge()<<endl;
-    
+
+    nMatchesMuon_.push_back(mu->numberOfMatchedStations());
+
     // reco track information
     reco::TrackRef trackerTrack = mu->innerTrack();
     reco::TrackRef muonTrack    = mu->outerTrack();
     reco::TrackRef glbTrack     = mu->globalTrack();
+
     if( glbTrack.isNonnull() ) {
       normchi2Muon_.push_back(glbTrack->normalizedChi2());
       nhitsMuon_.push_back(glbTrack->numberOfValidHits());
@@ -980,6 +1003,11 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	pixelHitsMuon_.push_back(trackerTrack->hitPattern().numberOfValidPixelHits());
 	trackerLayersMuon_.push_back(trackerTrack->hitPattern().trackerLayersWithMeasurement());
       }
+    }
+
+    if( !vertices->empty() && !vertices->front().isFake() ) {
+      dxyVtxMuon_.push_back(mu->muonBestTrack()->dxy(vertices->front().position()));
+      dzVtxMuon_.push_back(mu->muonBestTrack()->dz(vertices->front().position()));
     }
   }
 
@@ -1082,6 +1110,9 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   //mvaValue_.clear();
   eleEcalDrivenSeed_.clear();
 
+  isGLBmuon_.clear();
+  isPFmuon_.clear();
+
   ptMuon_.clear();
   etaMuon_.clear();
   phiMuon_.clear();
@@ -1096,6 +1127,9 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   trackerHitsMuon_.clear();
   pixelHitsMuon_.clear();
   trackerLayersMuon_.clear();
+  nMatchesMuon_.clear();
+  dxyVtxMuon_.clear();
+  dzVtxMuon_.clear();
 
 }
 // ------------ method called once each job just before starting event loop  ------------
