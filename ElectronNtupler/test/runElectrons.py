@@ -5,6 +5,10 @@ process = cms.Process("Ntupler")
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = 10000
 
+process.load("Geometry.CMSCommonData.cmsIdealGeometryXML_cfi");
+process.load("Geometry.CaloEventSetup.CaloGeometry_cfi");
+process.load("Geometry.CaloEventSetup.CaloTopology_cfi");
+
 #
 # Define input data to read
 #
@@ -15,8 +19,8 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) )
 #process.GlobalTag.globaltag = 'GR_E_V49::All'                                                 #Data
 
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff")
-process.GlobalTag.globaltag = cms.string("74X_dataRun2_Prompt_v0")                            #Data
-#process.GlobalTag.globaltag = cms.string("MCRUN2_74_V9A")                                      #MC
+#process.GlobalTag.globaltag = cms.string("74X_dataRun2_Prompt_v0")                            #Data
+process.GlobalTag.globaltag = cms.string("MCRUN2_74_V9")                                      #MC
 
 inputFilesAOD = cms.untracked.vstring(
     # AOD test files from /DYJetsToLL_M-50_13TeV-madgraph-pythia8/Phys14DR-PU20bx25_PHYS14_25_V1-v1/AODSIM
@@ -29,7 +33,8 @@ inputFilesMiniAOD = cms.untracked.vstring(
     # MiniAOD test files from /DYJetsToLL_M-50_13TeV-madgraph-pythia8/Phys14DR-PU20bx25_PHYS14_25_V1-v1/MINIAODSIM
     
     #'/DoubleEG/Run2015B-PromptReco-v1/MINIAOD'
-    '/store/data/Run2015B/DoubleEG/MINIAOD/PromptReco-v1/000/251/244/00000/6A0A8868-4B27-E511-B3F8-02163E011BD1.root'
+    #'/store/data/Run2015B/DoubleEG/MINIAOD/PromptReco-v1/000/251/244/00000/6A0A8868-4B27-E511-B3F8-02163E011BD1.root'
+    '/store/mc/RunIISpring15DR74/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/007C13B1-A037-E511-9056-00259073E51C.root'
     )
 
 #
@@ -59,9 +64,9 @@ else :
 switchOnVIDElectronIdProducer(process, dataFormat)
 
 # define which IDs we want to produce
-my_id_modules = ['RecoEgamma.ElectronIdentification.Identification.cutBasedElectronID_PHYS14_PU20bx25_V2_cff',
-	                 'RecoEgamma.ElectronIdentification.Identification.mvaElectronID_PHYS14_PU20bx25_nonTrig_V1_cff',
-			 'RecoEgamma.ElectronIdentification.Identification.heepElectronID_HEEPV51_cff']
+my_id_modules = ['RecoEgamma.ElectronIdentification.Identification.cutBasedElectronID_Spring15_25ns_V1_cff',
+	                 #'RecoEgamma.ElectronIdentification.Identification.mvaElectronID_PHYS14_PU20bx25_nonTrig_V1_cff',
+			 'RecoEgamma.ElectronIdentification.Identification.heepElectronID_HEEPV60_cff']
 
 #add them to the VID producer
 for idmod in my_id_modules:
@@ -77,8 +82,8 @@ process.ntupler = cms.EDAnalyzer('SimpleElectronNtupler',
                                  #
                                  # Common to all formats objects
                                  #
-                                 isMC     = cms.untracked.bool(False),
-				 isPythia = cms.untracked.bool(False),
+                                 isMC     = cms.untracked.bool(True),
+				 isPythia = cms.untracked.bool(True),
 				 trigger  = cms.InputTag("TriggerResults::HLT"),
 				 pileup   = cms.InputTag("addPileupInfo"),
                                  rho      = cms.InputTag("fixedGridRhoFastjetAll"),
@@ -93,22 +98,23 @@ process.ntupler = cms.EDAnalyzer('SimpleElectronNtupler',
                                  #
                                  # Objects specific to MiniAOD format
                                  #
-                                 electronsMiniAOD    = cms.InputTag("slimmedElectrons"),
+                                 muonsMiniAOD    = cms.InputTag("slimmedMuons"),
+				 electronsMiniAOD    = cms.InputTag("slimmedElectrons"),
                                  genParticlesMiniAOD = cms.InputTag("prunedGenParticles"),
                                  verticesMiniAOD     = cms.InputTag("offlineSlimmedPrimaryVertices"),
                                  conversionsMiniAOD  = cms.InputTag('reducedEgamma:reducedConversions'),
 				 #
                                  # ID decisions (common to all formats)
                                  #
-				 eleVetoIdMap = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-PHYS14-PU20bx25-V2-standalone-veto"),
-                                 eleLooseIdMap = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-PHYS14-PU20bx25-V2-standalone-loose"),
-                                 eleMediumIdMap = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-PHYS14-PU20bx25-V2-standalone-medium"),
-                                 eleTightIdMap = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-PHYS14-PU20bx25-V2-standalone-tight"),
+				 eleVetoIdMap = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Spring15-25ns-V1-standalone-veto"),
+                                 eleLooseIdMap = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Spring15-25ns-V1-standalone-loose"),
+                                 eleMediumIdMap = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Spring15-25ns-V1-standalone-medium"),
+                                 eleTightIdMap = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Spring15-25ns-V1-standalone-tight"),
 				 #
                                  # ValueMaps with MVA results
                                  #
-                                 mvaValuesMap     = cms.InputTag("electronMVAValueMapProducer:ElectronMVAEstimatorRun2Phys14NonTrigValues"),
-                                 mvaCategoriesMap = cms.InputTag("electronMVAValueMapProducer:ElectronMVAEstimatorRun2Phys14NonTrigCategories"),
+                                 #mvaValuesMap     = cms.InputTag("electronMVAValueMapProducer:ElectronMVAEstimatorRun2Phys14NonTrigValues"),
+                                 #mvaCategoriesMap = cms.InputTag("electronMVAValueMapProducer:ElectronMVAEstimatorRun2Phys14NonTrigCategories"),
 				 
 				 objects = cms.InputTag('selectedPatTrigger')
 				 #tagFilterName   = cms.vstring("hltEle23Ele12CaloIdTrackIdIsoTrackIsoLeg1Filter"),
