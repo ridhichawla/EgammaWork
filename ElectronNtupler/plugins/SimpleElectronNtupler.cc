@@ -72,7 +72,9 @@ Implementation:
 #include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
 
-#include "/afs/cern.ch/work/r/rchawla/private/CMSSW_7_4_0/src/EgammaWork/ElectronNtupler/plugins/utils.h"
+#include "DataFormats/PatCandidates/interface/Muon.h"
+
+//#include "/afs/cern.ch/work/r/rchawla/private/CMSSW_7_4_0/src/EgammaWork/ElectronNtupler/plugins/utils.h"
 //#include "FWCore/ParameterSet/interface/FileInPath.h"
 //#include "/afs/cern.ch/work/r/rchawla/private/CMSSW_7_4_0/src/EgammaWork/ElectronNtupler/plugins/FileInPath.h"
 //
@@ -115,6 +117,7 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     edm::EDGetTokenT<reco::ConversionCollection> conversionsToken_;
 
     // MiniAOD case data members
+    edm::EDGetToken muonsMiniAODToken_;
     edm::EDGetToken electronsMiniAODToken_;
     edm::EDGetTokenT<reco::VertexCollection> vtxMiniAODToken_;
     edm::EDGetTokenT<edm::View<reco::GenParticle> > genParticlesMiniAODToken_;
@@ -127,8 +130,8 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     edm::EDGetTokenT<edm::ValueMap<bool> > eleTightIdMapToken_;
 
     // MVA values and categories (optional)
-    edm::EDGetTokenT<edm::ValueMap<float> > mvaValuesMapToken_;
-    edm::EDGetTokenT<edm::ValueMap<int> > mvaCategoriesMapToken_;
+    //edm::EDGetTokenT<edm::ValueMap<float> > mvaValuesMapToken_;
+    //edm::EDGetTokenT<edm::ValueMap<int> > mvaCategoriesMapToken_;
 
     edm::Service<TFileService> fs;
     TTree *electronTree_;
@@ -249,8 +252,8 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     std::vector<Int_t> passMediumId_;
     std::vector<Int_t> passTightId_;
 
-    std::vector<Float_t> mvaValue_;
-    std::vector<Int_t>   mvaCategory_;
+    //std::vector<Float_t> mvaValue_;
+    //std::vector<Int_t>   mvaCategory_;
 
     std::vector<Int_t> eleEcalDrivenSeed_;
 
@@ -270,6 +273,23 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     std::vector<double> eta_SE_Data;
     std::vector<double> phi_SE_Data;
 
+    // all muon variables
+    Int_t nMuons_;
+    std::vector<double> ptMuon_;
+    std::vector<double> etaMuon_;
+    std::vector<double> phiMuon_;
+    std::vector<double> energyMuon_;
+    std::vector<double> chargeMuon_;
+    
+    std::vector<double> normchi2Muon_;
+    std::vector<double> nhitsMuon_;
+    std::vector<double> hitsMuon_;
+    std::vector<double> dxyMuon_;
+    std::vector<double> d0Muon_;
+    std::vector<double> trackerHitsMuon_;
+    std::vector<double> pixelHitsMuon_;
+    std::vector<double> trackerLayersMuon_;
+
     //std::vector<pat::TriggerObjectStandAlone> leg1triggerObj;
     //std::vector<pat::TriggerObjectStandAlone> leg2triggerObj;
 
@@ -286,9 +306,9 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   eleVetoIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleVetoIdMap"))),
   eleLooseIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleLooseIdMap"))),
   eleMediumIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleMediumIdMap"))),
-  eleTightIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleTightIdMap"))),
-  mvaValuesMapToken_(consumes<edm::ValueMap<float> >(iConfig.getParameter<edm::InputTag>("mvaValuesMap"))),
-  mvaCategoriesMapToken_(consumes<edm::ValueMap<int> >(iConfig.getParameter<edm::InputTag>("mvaCategoriesMap")))
+  eleTightIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleTightIdMap")))
+  //mvaValuesMapToken_(consumes<edm::ValueMap<float> >(iConfig.getParameter<edm::InputTag>("mvaValuesMap"))),
+  //mvaCategoriesMapToken_(consumes<edm::ValueMap<int> >(iConfig.getParameter<edm::InputTag>("mvaCategoriesMap")))
 {
   nevents_ = fs->make<TH1F>("nevents_","nevents_",2,0,2);
   //Weights_ = fs->make<TH1F>("Weights_","Weights_",5000,-5000,5000); 
@@ -355,6 +375,10 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
 
   // MiniAOD tokens
   // For electrons, use the fact that pat::Electron can be cast into GsfElectron
+  muonsMiniAODToken_        = mayConsume<edm::View<pat::Muon> >
+    (iConfig.getParameter<edm::InputTag>
+     ("muonsMiniAOD"));
+  
   electronsMiniAODToken_    = mayConsume<edm::View<reco::GsfElectron> >
     (iConfig.getParameter<edm::InputTag>
      ("electronsMiniAOD"));
@@ -476,9 +500,26 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronTree_->Branch("passLooseId"  ,  &passLooseId_ );
   electronTree_->Branch("passMediumId" ,  &passMediumId_ );
   electronTree_->Branch("passTightId"  ,  &passTightId_ );
-  electronTree_->Branch("mvaVal" ,  &mvaValue_ );
-  electronTree_->Branch("mvaCat" ,  &mvaCategory_ );
+  //electronTree_->Branch("mvaVal" ,  &mvaValue_ );
+  //electronTree_->Branch("mvaCat" ,  &mvaCategory_ );
   electronTree_->Branch("eleEcalDrivenSeed", &eleEcalDrivenSeed_);
+
+  electronTree_->Branch("nMuons", &nMuons_);
+  
+  electronTree_->Branch("ptMuon", &ptMuon_);
+  electronTree_->Branch("etaMuon", &etaMuon_);
+  electronTree_->Branch("phiMuon", &phiMuon_);
+  electronTree_->Branch("energyMuon", &energyMuon_);
+  electronTree_->Branch("chargeMuon", &chargeMuon_);
+
+  electronTree_->Branch("normchi2Muon", &normchi2Muon_);
+  electronTree_->Branch("nhitsMuon", &nhitsMuon_);
+  electronTree_->Branch("hitsMuon", &hitsMuon_);
+  electronTree_->Branch("dxyMuon", &dxyMuon_);
+  electronTree_->Branch("d0Muon", &d0Muon_);
+  electronTree_->Branch("trackerHitsMuon", &trackerHitsMuon_);
+  electronTree_->Branch("pixelHitsMuon", &pixelHitsMuon_);
+  electronTree_->Branch("trackerLayersMuon", &trackerLayersMuon_);
 
 }
 
@@ -544,12 +585,12 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   /*bool trigResult = false;
 
-  for (unsigned int i=0; i<triggerHandle->size(); i++)
-  {
+    for (unsigned int i=0; i<triggerHandle->size(); i++)
+    {
     std::string trigName = triggerNames.triggerName(i);
     trigResult = triggerHandle->accept(i);
     cout<<"Name of Trigger = "<<trigName<<"   Trigger Result = "<<trigResult<<"   Trigger Number = "<<i<<endl;
-  }*/
+    }*/
 
   //bool tagPass = false;
   //bool probePass = false;
@@ -580,10 +621,10 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       }
 
       if((SEDataFilter.compare(obj.filterLabels()[j]))==0){
-        //probePass = true;
-        pt_SE_Data.push_back(obj.pt());
-        eta_SE_Data.push_back(obj.eta());
-        phi_SE_Data.push_back(obj.phi());
+	//probePass = true;
+	pt_SE_Data.push_back(obj.pt());
+	eta_SE_Data.push_back(obj.eta());
+	phi_SE_Data.push_back(obj.phi());
       }
 
     }
@@ -611,7 +652,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     if(found_singleEle_data !=string::npos){
       single_electron_triggers_in_run_data.push_back(hltname);
     }
-    
+
     if(found_doubleEle !=string::npos){
       double_electron_triggers_in_run.push_back(hltname);
     }
@@ -782,12 +823,12 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   // Get MVA values and categories (optional)
   edm::Handle<edm::ValueMap<float> > mvaValues;
   edm::Handle<edm::ValueMap<int> > mvaCategories;
-  iEvent.getByToken(mvaValuesMapToken_,mvaValues);
-  iEvent.getByToken(mvaCategoriesMapToken_,mvaCategories);
+  //iEvent.getByToken(mvaValuesMapToken_,mvaValues);
+  //iEvent.getByToken(mvaCategoriesMapToken_,mvaCategories);
 
   nElectrons_ = 0;
-  cout<<"Event: "<<iEvent.id().event()<<"   "<<"Electrons: "<<electrons->size()<<endl;//"      trigger: "<<doubleElectron<<endl;
-  
+  //cout<<"Event: "<<iEvent.id().event()<<"   "<<"Electrons: "<<electrons->size()<<endl;//"      trigger: "<<doubleElectron<<endl;
+
   // Loop over electrons
   for (size_t i = 0; i < electrons->size(); ++i){
     const auto el = electrons->ptrAt(i);
@@ -796,7 +837,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     //if( el->pt() < 10 ) continue; // keep only electrons above 10 GeV
 
     nElectrons_++;
-    cout<<"pt: "<<el->pt()<<endl;
+    //cout<<"pt: "<<el->pt()<<endl;
     pt_.push_back( el->pt() );
     eta_.push_back( el->eta() );
     rap_.push_back( el->rapidity() );
@@ -881,8 +922,8 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     passMediumId_.push_back( (int)isPassMedium);
     passTightId_.push_back ( (int)isPassTight );
 
-    mvaValue_.push_back( (*mvaValues)[el] );
-    mvaCategory_.push_back( (*mvaCategories)[el] );
+    //mvaValue_.push_back( (*mvaValues)[el] );
+    //mvaCategory_.push_back( (*mvaCategories)[el] );
 
     eleInBarrel_.push_back(el->isEB());
     eleInEndcap_.push_back(el->isEE());
@@ -891,6 +932,55 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     eleEcalDrivenSeed_.push_back(el->ecalDrivenSeed());
     //cout<<"ECAL driven: "<<el->ecalDrivenSeed()<<endl;
 
+  }
+
+  edm::Handle<edm::View<pat::Muon> > muons;
+  iEvent.getByToken(muonsMiniAODToken_,muons);
+  
+  cout<<"Muons: "<<muons->size()<<endl;
+  nMuons_ = 0;
+  
+  for(unsigned i=0; i < muons->size();++i ) {
+    const auto mu = muons->ptrAt(i);
+    nMuons_++;
+
+    // Kinematics
+    ptMuon_.push_back(mu->pt());
+    etaMuon_.push_back(mu->eta());
+    phiMuon_.push_back(mu->phi());
+    energyMuon_.push_back(mu->energy());
+    chargeMuon_.push_back(mu->charge());
+
+    cout<<"pt: "<<mu->pt()<<"   "<<"eta: "<<mu->eta()<<"   "<<"phi: "<<mu->phi()<<"   "<<"energy: "<<mu->energy()<<"   "<<"charge: "<<mu->charge()<<endl;
+    
+    // reco track information
+    reco::TrackRef trackerTrack = mu->innerTrack();
+    reco::TrackRef muonTrack    = mu->outerTrack();
+    reco::TrackRef glbTrack     = mu->globalTrack();
+    if( glbTrack.isNonnull() ) {
+      normchi2Muon_.push_back(glbTrack->normalizedChi2());
+      nhitsMuon_.push_back(glbTrack->numberOfValidHits());
+      hitsMuon_.push_back(glbTrack->hitPattern().numberOfValidMuonHits());
+      dxyMuon_.push_back(glbTrack->dxy());
+      d0Muon_.push_back(glbTrack->d0());
+    }
+    else {
+      if( trackerTrack.isNonnull() ) {
+	normchi2Muon_.push_back(trackerTrack->normalizedChi2());
+	nhitsMuon_.push_back(trackerTrack->numberOfValidHits());
+	if( muonTrack.isNonnull() ) {
+	  hitsMuon_.push_back(muonTrack->hitPattern().numberOfValidMuonHits());
+	}
+	else {
+	  hitsMuon_.push_back(0);
+	}
+      }
+      if( trackerTrack.isNonnull() ) {
+	trackerHitsMuon_.push_back(trackerTrack->hitPattern().numberOfValidTrackerHits());
+	pixelHitsMuon_.push_back(trackerTrack->hitPattern().numberOfValidPixelHits());
+	trackerLayersMuon_.push_back(trackerTrack->hitPattern().trackerLayersWithMeasurement());
+      }
+    }
   }
 
   // Save this electron's info
@@ -988,9 +1078,24 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   passLooseId_.clear();
   passMediumId_.clear();
   passTightId_.clear();
-  mvaCategory_.clear();
-  mvaValue_.clear();
+  //mvaCategory_.clear();
+  //mvaValue_.clear();
   eleEcalDrivenSeed_.clear();
+
+  ptMuon_.clear();
+  etaMuon_.clear();
+  phiMuon_.clear();
+  energyMuon_.clear();
+  chargeMuon_.clear();
+
+  normchi2Muon_.clear();
+  nhitsMuon_.clear();
+  hitsMuon_.clear();
+  dxyMuon_.clear();
+  d0Muon_.clear();
+  trackerHitsMuon_.clear();
+  pixelHitsMuon_.clear();
+  trackerLayersMuon_.clear();
 
 }
 // ------------ method called once each job just before starting event loop  ------------
