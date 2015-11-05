@@ -12,7 +12,7 @@ process.load("Geometry.CaloEventSetup.CaloTopology_cfi");
 #
 # Define input data to read
 #
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) ) 
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) ) 
 
 #process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 #process.GlobalTag.globaltag = 'MCRUN2_74_V9::All'                                             #MC
@@ -32,9 +32,17 @@ inputFilesAOD = cms.untracked.vstring(
 inputFilesMiniAOD = cms.untracked.vstring(
     # MiniAOD test files from /DYJetsToLL_M-50_13TeV-madgraph-pythia8/Phys14DR-PU20bx25_PHYS14_25_V1-v1/MINIAODSIM
     
-    #'/DoubleEG/Run2015B-PromptReco-v1/MINIAOD'
+    #'/DYJetsToLL_M-10to50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/MINIAODSIM'
+    #'/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v3/MINIAODSIM'
+    #' /store/mc/RunIISpring15DR74/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v3/10000/009D49A5-7314-E511-84EF-0025905A605E.root'
+    #'/TTTo2L2Nu_13TeV-powheg/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/MINIAODSIM'
+    #'/WWTo2L2Nu_13TeV-powheg/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/MINIAODSIM'
+    '/WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/MINIAODSIM'
+    #'/store/mc/RunIISpring15DR74/WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/00000/048FB1EE-33FD-E411-A2BA-0025905A6094.root'
+    #'/store/mc/RunIISpring15DR74/WWTo2L2Nu_13TeV-powheg/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/082EF100-DC05-E511-AD3F-A0040420FE80.root'
+    #'/store/mc/RunIISpring15DR74/TTTo2L2Nu_13TeV-powheg/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/004FB226-F005-E511-AE60-00259073E382.root'
     #'/store/data/Run2015B/DoubleEG/MINIAOD/PromptReco-v1/000/251/244/00000/6A0A8868-4B27-E511-B3F8-02163E011BD1.root'
-    '/store/mc/RunIISpring15DR74/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/007C13B1-A037-E511-9056-00259073E51C.root'
+    #'/store/mc/RunIISpring15DR74/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/007C13B1-A037-E511-9056-00259073E51C.root'
     )
 
 #
@@ -83,7 +91,7 @@ process.ntupler = cms.EDAnalyzer('SimpleElectronNtupler',
                                  # Common to all formats objects
                                  #
                                  isMC     = cms.untracked.bool(True),
-				 isPythia = cms.untracked.bool(True),
+				 isPythia = cms.untracked.bool(False),
 				 trigger  = cms.InputTag("TriggerResults::HLT"),
 				 pileup   = cms.InputTag("addPileupInfo"),
                                  rho      = cms.InputTag("fixedGridRhoFastjetAll"),
@@ -122,7 +130,7 @@ process.ntupler = cms.EDAnalyzer('SimpleElectronNtupler',
                                  )
 
 process.TFileService = cms.Service("TFileService",
-                                   fileName = cms.string('data.root')
+                                   fileName = cms.string('WJetsToLNu.root')
                                    )
 
 
