@@ -12,15 +12,15 @@ process.load("Geometry.CaloEventSetup.CaloTopology_cfi");
 #
 # Define input data to read
 #
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) ) 
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) ) 
 
 #process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 #process.GlobalTag.globaltag = 'MCRUN2_74_V9::All'                                             #MC
 #process.GlobalTag.globaltag = 'GR_E_V49::All'                                                 #Data
 
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff")
-#process.GlobalTag.globaltag = cms.string("74X_dataRun2_Prompt_v0")                            #Data
-process.GlobalTag.globaltag = cms.string("MCRUN2_74_V9")                                      #MC
+#process.GlobalTag.globaltag = cms.string("74X_dataRun2_reMiniAOD_v0")#74X_dataRun2_Prompt_v4")                            #Data
+process.GlobalTag.globaltag = cms.string("74X_mcRun2_asymptotic_v2")                                      #MC
 
 inputFilesAOD = cms.untracked.vstring(
     # AOD test files from /DYJetsToLL_M-50_13TeV-madgraph-pythia8/Phys14DR-PU20bx25_PHYS14_25_V1-v1/AODSIM
@@ -32,17 +32,18 @@ inputFilesAOD = cms.untracked.vstring(
 inputFilesMiniAOD = cms.untracked.vstring(
     # MiniAOD test files from /DYJetsToLL_M-50_13TeV-madgraph-pythia8/Phys14DR-PU20bx25_PHYS14_25_V1-v1/MINIAODSIM
     
-    #'/DYJetsToLL_M-10to50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/MINIAODSIM'
-    #'/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v3/MINIAODSIM'
-    #' /store/mc/RunIISpring15DR74/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v3/10000/009D49A5-7314-E511-84EF-0025905A605E.root'
-    #'/TTTo2L2Nu_13TeV-powheg/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/MINIAODSIM'
+    #'/store/mc/RunIISpring15MiniAODv2/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/50000/041705A6-6F6F-E511-AC9C-001E6757F1D4.root'
+    '/store/mc/RunIISpring15MiniAODv2/WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/40000/008865AA-596D-E511-92F1-0025905A6110.root'
+    #'/SingleElectron/Run2015D-PromptReco-v4/MINIAOD'
+    #'/store/data/Run2015D/SingleElectron/MINIAOD/PromptReco-v4/000/258/159/00000/0EC56452-186C-E511-8158-02163E0146D5.root'
+    #'/SingleElectron/Run2015D-05Oct2015-v1/MINIAOD'
+    #'/store/data/Run2015D/SingleElectron/MINIAOD/05Oct2015-v1/10000/00991D45-4E6F-E511-932C-0025905A48F2.root'
+    
+    #'/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/MINIAODSIM'
+    #'/TTTo2L2Nu_13TeV-powheg/RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/MINIAODSIM'
+    #'/store/mc/RunIISpring15MiniAODv2/TTTo2L2Nu_13TeV-powheg/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/10000/004613BA-C46D-E511-9EB6-001E67248732.root'
     #'/WWTo2L2Nu_13TeV-powheg/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/MINIAODSIM'
-    '/WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/MINIAODSIM'
-    #'/store/mc/RunIISpring15DR74/WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/00000/048FB1EE-33FD-E411-A2BA-0025905A6094.root'
-    #'/store/mc/RunIISpring15DR74/WWTo2L2Nu_13TeV-powheg/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/082EF100-DC05-E511-AD3F-A0040420FE80.root'
-    #'/store/mc/RunIISpring15DR74/TTTo2L2Nu_13TeV-powheg/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/004FB226-F005-E511-AE60-00259073E382.root'
-    #'/store/data/Run2015B/DoubleEG/MINIAOD/PromptReco-v1/000/251/244/00000/6A0A8868-4B27-E511-B3F8-02163E011BD1.root'
-    #'/store/mc/RunIISpring15DR74/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/007C13B1-A037-E511-9056-00259073E51C.root'
+    #'/WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/MINIAODSIM'
     )
 
 #
@@ -91,10 +92,11 @@ process.ntupler = cms.EDAnalyzer('SimpleElectronNtupler',
                                  # Common to all formats objects
                                  #
                                  isMC     = cms.untracked.bool(True),
-				 isPythia = cms.untracked.bool(False),
+				 isNLO    = cms.untracked.bool(True),
 				 trigger  = cms.InputTag("TriggerResults::HLT"),
-				 pileup   = cms.InputTag("addPileupInfo"),
-                                 rho      = cms.InputTag("fixedGridRhoFastjetAll"),
+				 #pileup   = cms.InputTag("addPileupInfo"),
+                                 pileup   = cms.InputTag("slimmedAddPileupInfo"),
+				 rho      = cms.InputTag("fixedGridRhoFastjetAll"),
                                  beamSpot = cms.InputTag('offlineBeamSpot'),
                                  #
                                  # Objects specific to AOD format
@@ -130,7 +132,7 @@ process.ntupler = cms.EDAnalyzer('SimpleElectronNtupler',
                                  )
 
 process.TFileService = cms.Service("TFileService",
-                                   fileName = cms.string('WJetsToLNu.root')
+                                   fileName = cms.string('crosscheck.root')
                                    )
 
 
