@@ -595,19 +595,22 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     Handle<GenEventInfoProduct> genEvtInfo;
     iEvent.getByLabel("generator", genEvtInfo);
 
-    std::vector<double> evtWeights = genEvtInfo->weights();
-    theWeight = genEvtInfo->weight();
+    //std::vector<double> evtWeights = genEvtInfo->weights();
+    
+    if (genEvtInfo.isValid()) {
+      theWeight = genEvtInfo->weight();
+    }
+    //Handle<LHEEventProduct> EvtHandle;
+    //iEvent.getByLabel("externalLHEProducer", EvtHandle);
 
-    Handle<LHEEventProduct> EvtHandle;
-    iEvent.getByLabel("externalLHEProducer", EvtHandle);
-
-    int whichWeight = 1;
-    theWeight *= EvtHandle->weights()[whichWeight].wgt/EvtHandle->originalXWGTUP(); 
+    //int whichWeight = 1;
+    //theWeight *= EvtHandle->weights()[whichWeight].wgt/EvtHandle->originalXWGTUP(); 
 
     //Weights_->Fill(theWeight);
 
     if(theWeight >= 1) ++weightsP;
-    else if(theWeight < 1) ++weightsN;
+    else ++weightsN;
+    //else (theWeight < 1) ++weightsN;
 
     //cout<<"Weight: "<<theWeight<<endl;
   }
@@ -628,16 +631,16 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   std::string DEProbeFilter("hltEle17Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg2Filter");
   std::string SEDataFilter("hltSingleEle22WPLooseGsfTrackIsoFilter");//hltEle23WP75GsfTrackIsoFilter");
   std::string SEMCFilter("hltSingleEle22WP75GsfTrackIsoFilter");//hltEle23WPLooseGsfTrackIsoFilter");
-/*
-  bool trigResult = false;
+  /*
+     bool trigResult = false;
 
-  for (unsigned int i=0; i<triggerHandle->size(); i++)
-  {
-    std::string trigName = triggerNames.triggerName(i);
-    trigResult = triggerHandle->accept(i);
-    cout<<"Name of Trigger = "<<trigName<<"   Trigger Result = "<<trigResult<<"   Trigger Number = "<<i<<endl;
-  }
-*/
+     for (unsigned int i=0; i<triggerHandle->size(); i++)
+     {
+     std::string trigName = triggerNames.triggerName(i);
+     trigResult = triggerHandle->accept(i);
+     cout<<"Name of Trigger = "<<trigName<<"   Trigger Result = "<<trigResult<<"   Trigger Number = "<<i<<endl;
+     }
+     */
   //bool tagPass = false;
   //bool probePass = false;
 
@@ -771,11 +774,11 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     iEvent.getByToken(genParticlesMiniAODToken_,genParticles);
 
   /*if(DYTauTau)
-  {
-  vector<GenLepton> GenLeptonCollection;
-  }*/
-  
-  
+    {
+    vector<GenLepton> GenLeptonCollection;
+    }*/
+
+
   if(misMC){
     nGenElectrons_ = 0;
 
@@ -822,209 +825,209 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
       }
     }
-/*
-      if(gPost_pt_.size()>=2){
-	post1.SetPtEtaPhiE(gPost_pt_.at(0),gPost_eta_.at(0),gPost_phi_.at(0),gPost_energy_.at(0));
-	post2.SetPtEtaPhiE(gPost_pt_.at(1),gPost_eta_.at(1),gPost_phi_.at(1),gPost_energy_.at(1));}
+    /*
+       if(gPost_pt_.size()>=2){
+       post1.SetPtEtaPhiE(gPost_pt_.at(0),gPost_eta_.at(0),gPost_phi_.at(0),gPost_energy_.at(0));
+       post2.SetPtEtaPhiE(gPost_pt_.at(1),gPost_eta_.at(1),gPost_phi_.at(1),gPost_energy_.at(1));}
 
-      dipost=post1+post2;
-      ZMass_GenpostFSR = dipost.M();
-      ZMass_postFSR->Fill(ZMass_GenpostFSR);
+       dipost=post1+post2;
+       ZMass_GenpostFSR = dipost.M();
+       ZMass_postFSR->Fill(ZMass_GenpostFSR);
 
-      if(gPre_pt_.size()>=2){
-	gen1.SetPtEtaPhiE(gPre_pt_.at(0),gPre_eta_.at(0),gPre_phi_.at(0),gPre_energy_.at(0));
-	gen2.SetPtEtaPhiE(gPre_pt_.at(1),gPre_eta_.at(1),gPre_phi_.at(1),gPre_energy_.at(1));}
+       if(gPre_pt_.size()>=2){
+       gen1.SetPtEtaPhiE(gPre_pt_.at(0),gPre_eta_.at(0),gPre_phi_.at(0),gPre_energy_.at(0));
+       gen2.SetPtEtaPhiE(gPre_pt_.at(1),gPre_eta_.at(1),gPre_phi_.at(1),gPre_energy_.at(1));}
 
-      digen=gen1+gen2;
-      ZMass_GenpreFSR = digen.M();
-      ZMass_preFSR->Fill(ZMass_GenpreFSR);*/
+       digen=gen1+gen2;
+       ZMass_GenpreFSR = digen.M();
+       ZMass_preFSR->Fill(ZMass_GenpreFSR);*/
+  }
+  //cout<<"2"<<endl;
+  // Get PV
+
+
+  edm::Handle<reco::VertexCollection> vertices;
+  if( isAOD )
+    iEvent.getByToken(vtxToken_, vertices);
+  else
+    iEvent.getByToken(vtxMiniAODToken_, vertices);
+
+  if (vertices->empty()) return; // skip the event if no PV found
+  //const reco::Vertex &pv = vertices->front();
+  nPV_    = vertices->size();
+  //cout<<"nPV: "<<nPV_<<endl;
+
+  // Find the first vertex in the collection that passes  good quality criteria
+  VertexCollection::const_iterator firstGoodVertex = vertices->end();
+  int firstGoodVertexIdx = 0;
+  for (VertexCollection::const_iterator vtx = vertices->begin(); vtx != vertices->end(); ++vtx, ++firstGoodVertexIdx) {
+    // Replace isFake() for miniAOD because it requires tracks and miniAOD vertices don't have tracks:
+    // Vertex.h: bool isFake() const {return (chi2_==0 && ndof_==0 && tracks_.empty());}
+    bool isFake = vtx->isFake();
+    if( !isAOD )
+      isFake = (vtx->chi2()==0 && vtx->ndof()==0);
+    // Check the goodness
+    if ( !isFake && vtx->ndof()>=4. && vtx->position().Rho()<=2.0 && fabs(vtx->position().Z())<=24.0) {
+      firstGoodVertex = vtx;
+      break;
     }
-    //cout<<"2"<<endl;
-    // Get PV
+  }
 
+  if ( firstGoodVertex==vertices->end() )
+    return; // skip event if there are no good PVs
 
-    edm::Handle<reco::VertexCollection> vertices;
-    if( isAOD )
-      iEvent.getByToken(vtxToken_, vertices);
-    else
-      iEvent.getByToken(vtxMiniAODToken_, vertices);
+  // Seems always zero. Not stored in miniAOD...?
+  pvNTracks_ = firstGoodVertex->nTracks();
 
-    if (vertices->empty()) return; // skip the event if no PV found
-    //const reco::Vertex &pv = vertices->front();
-    nPV_    = vertices->size();
-    //cout<<"nPV: "<<nPV_<<endl;
+  // Get the conversions collection
+  edm::Handle<reco::ConversionCollection> conversions;
+  if(isAOD)
+    iEvent.getByToken(conversionsToken_, conversions);
+  else
+    iEvent.getByToken(conversionsMiniAODToken_, conversions);
 
-    // Find the first vertex in the collection that passes  good quality criteria
-    VertexCollection::const_iterator firstGoodVertex = vertices->end();
-    int firstGoodVertexIdx = 0;
-    for (VertexCollection::const_iterator vtx = vertices->begin(); vtx != vertices->end(); ++vtx, ++firstGoodVertexIdx) {
-      // Replace isFake() for miniAOD because it requires tracks and miniAOD vertices don't have tracks:
-      // Vertex.h: bool isFake() const {return (chi2_==0 && ndof_==0 && tracks_.empty());}
-      bool isFake = vtx->isFake();
-      if( !isAOD )
-	isFake = (vtx->chi2()==0 && vtx->ndof()==0);
-      // Check the goodness
-      if ( !isFake && vtx->ndof()>=4. && vtx->position().Rho()<=2.0 && fabs(vtx->position().Z())<=24.0) {
-	firstGoodVertex = vtx;
-	break;
+  // Get the electron ID data from the event stream.
+  edm::Handle<edm::ValueMap<bool> > veto_id_decisions;
+  edm::Handle<edm::ValueMap<bool> > loose_id_decisions;
+  edm::Handle<edm::ValueMap<bool> > medium_id_decisions;
+  edm::Handle<edm::ValueMap<bool> > tight_id_decisions;
+  iEvent.getByToken(eleVetoIdMapToken_ ,veto_id_decisions);
+  iEvent.getByToken(eleLooseIdMapToken_ ,loose_id_decisions);
+  iEvent.getByToken(eleMediumIdMapToken_,medium_id_decisions);
+  iEvent.getByToken(eleTightIdMapToken_ ,tight_id_decisions);
+
+  // Get MVA values and categories (optional)
+  //edm::Handle<edm::ValueMap<float> > mvaValues;
+  //edm::Handle<edm::ValueMap<int> > mvaCategories;
+  //iEvent.getByToken(mvaValuesMapToken_,mvaValues);
+  //iEvent.getByToken(mvaCategoriesMapToken_,mvaCategories);
+
+  nElectrons_ = 0;
+  //cout<<"Event: "<<iEvent.id().event()<<"   "<<"Electrons: "<<electrons->size()<<endl;//"      trigger: "<<doubleElectron<<endl;
+
+  // Loop over electrons
+  for (size_t i = 0; i < electrons->size(); ++i){
+    const auto el = electrons->ptrAt(i);
+
+    // Kinematics
+    //if( el->pt() < 10 ) continue; // keep only electrons above 10 GeV
+
+    if(el->pt() > 10. && el->eta() < 2.7){
+
+      nElectrons_++;
+      //cout<<"ele pt: "<<el->pt()<<"   "<<"ele eta: "<<el->eta()<<endl;
+      pt_.push_back( el->pt() );
+      eta_.push_back( el->eta() );
+      rap_.push_back( el->rapidity() );
+      phi_.push_back( el->phi() );
+      energy_.push_back( el->energy() );
+      mass_.push_back( el->mass() );
+      charge_.push_back( el->charge() );
+
+      double R = sqrt(el->superCluster()->x()*el->superCluster()->x() + el->superCluster()->y()*el->superCluster()->y() +el->superCluster()->z()*el->superCluster()->z());
+      double Rt = sqrt(el->superCluster()->x()*el->superCluster()->x() + el->superCluster()->y()*el->superCluster()->y());
+
+      enSC_.push_back(el->superCluster()->energy());
+      preEnSC_.push_back(el->superCluster()->preshowerEnergy());
+      rawEnSC_.push_back(el->superCluster()->rawEnergy());
+      etSC_.push_back( (el->superCluster()->energy())*(Rt/R) );
+      etaSC_.push_back( el->superCluster()->eta() );
+      phiSC_.push_back( el->superCluster()->phi() );
+
+      // ECAL
+      full5x5_sigmaIetaIeta_.push_back( el->full5x5_sigmaIetaIeta() );
+      E1x5_.push_back(el->e1x5());
+      E2x5_.push_back(el->e2x5Max());
+      E5x5_.push_back(el->e5x5());
+      hOverE_.push_back( el->hcalOverEcal() );
+      etaScWidth_.push_back(el->superCluster()->etaWidth());
+      phiScWidth_.push_back(el->superCluster()->phiWidth());
+      r9_.push_back(el->r9());
+
+      // ECAL + Track
+      dEtaIn_.push_back( el->deltaEtaSuperClusterTrackAtVtx() );
+      dPhiIn_.push_back( el->deltaPhiSuperClusterTrackAtVtx() );
+      // |1/E-1/p| = |1/E - EoverPinner/E| is computed below. The if protects against ecalEnergy == inf or zero
+      // (always the case for miniAOD for electrons <5 GeV)
+      if( el->ecalEnergy() == 0 ){
+	//printf("Electron energy is zero!\n");
+	ooEmooP_.push_back( 1e30 );
+      }else if( !std::isfinite(el->ecalEnergy())){
+	//printf("Electron energy is not finite!\n");
+	ooEmooP_.push_back( 1e30 );
+      }else{
+	ooEmooP_.push_back( fabs(1.0/el->ecalEnergy() - el->eSuperClusterOverP()/el->ecalEnergy() ) );
       }
+
+      // Isolation
+      GsfElectron::PflowIsolationVariables pfIso = el->pfIsolationVariables();
+
+      // Compute isolation with delta beta correction for PU
+      isoChargedHadrons_.push_back( pfIso.sumChargedHadronPt );
+      isoNeutralHadrons_.push_back( pfIso.sumNeutralHadronEt );
+      isoPhotons_.push_back( pfIso.sumPhotonEt );
+      isoChargedFromPU_.push_back( pfIso.sumPUPt );
+
+      float abseta = fabs(el->superCluster()->eta());
+
+      // The effective areas constants file in the local release or default CMSSW, whichever is found
+      edm::FileInPath eaConstantsFile("RecoEgamma/ElectronIdentification/data/PHYS14/effAreaElectrons_cone03_pfNeuHadronsAndPhotons.txt");
+      EffectiveAreas effectiveAreas(eaConstantsFile.fullPath());
+      float eA = effectiveAreas.getEffectiveArea(abseta);
+
+      isoDeltaBeta_.push_back((pfIso.sumChargedHadronPt + max<float>( 0.0, pfIso.sumNeutralHadronEt + pfIso.sumPhotonEt - 0.5 * pfIso.sumPUPt))/(el->pt()));
+      isoRho_.push_back((pfIso.sumChargedHadronPt + max<float>( 0.0, pfIso.sumNeutralHadronEt + pfIso.sumPhotonEt - rho_ * eA))/(el->pt()));
+
+      // Track - Impact Parameter, Conversion rejection, Converted
+      reco::GsfTrackRef theTrack = el->gsfTrack();
+      d0_.push_back( (-1) * theTrack->dxy(firstGoodVertex->position() ) );
+      dz_.push_back( theTrack->dz( firstGoodVertex->position() ) );
+      expectedMissingInnerHits_.push_back(el->gsfTrack()->hitPattern().numberOfHits(reco::HitPattern::MISSING_INNER_HITS) );
+      bool passConvVeto = !ConversionTools::hasMatchedConversion(*el, conversions, theBeamSpot->position());
+      passConversionVeto_.push_back( (int) passConvVeto );
+      brem_.push_back(el->fbrem());
+
+      // Match to generator level truth
+      if(misMC) isTrue_.push_back( matchToTruth( el, genParticles) );
+
+      // ID
+      bool isPassVeto  = (*veto_id_decisions)[el];
+      bool isPassLoose  = (*loose_id_decisions)[el];
+      bool isPassMedium = (*medium_id_decisions)[el];
+      bool isPassTight  = (*tight_id_decisions)[el];
+      passVetoId_.push_back  ( (int)isPassVeto  );
+      passLooseId_.push_back ( (int)isPassLoose );
+      passMediumId_.push_back( (int)isPassMedium);
+      passTightId_.push_back ( (int)isPassTight );
+
+      //mvaValue_.push_back( (*mvaValues)[el] );
+      //mvaCategory_.push_back( (*mvaCategories)[el] );
+
+      eleInBarrel_.push_back(el->isEB());
+      eleInEndcap_.push_back(el->isEE());
+
+      // ECAL driven
+      eleEcalDrivenSeed_.push_back(el->ecalDrivenSeed());
+      //cout<<"ECAL driven: "<<el->ecalDrivenSeed()<<endl;
+
     }
+  }
 
-    if ( firstGoodVertex==vertices->end() )
-      return; // skip event if there are no good PVs
+  edm::Handle<edm::View<pat::Muon> > muons;
+  iEvent.getByToken(muonsMiniAODToken_,muons);
 
-    // Seems always zero. Not stored in miniAOD...?
-    pvNTracks_ = firstGoodVertex->nTracks();
+  //edm::Handle< edm::View<reco::Vertex> > Vertices;
+  //iEvent.getByToken(VertexToken_,Vertices);
 
-    // Get the conversions collection
-    edm::Handle<reco::ConversionCollection> conversions;
-    if(isAOD)
-      iEvent.getByToken(conversionsToken_, conversions);
-    else
-      iEvent.getByToken(conversionsMiniAODToken_, conversions);
+  //bool muon::isTightMuon(const pat::Muon & recoMu, const reco::Vertex & vtx);
 
-    // Get the electron ID data from the event stream.
-    edm::Handle<edm::ValueMap<bool> > veto_id_decisions;
-    edm::Handle<edm::ValueMap<bool> > loose_id_decisions;
-    edm::Handle<edm::ValueMap<bool> > medium_id_decisions;
-    edm::Handle<edm::ValueMap<bool> > tight_id_decisions;
-    iEvent.getByToken(eleVetoIdMapToken_ ,veto_id_decisions);
-    iEvent.getByToken(eleLooseIdMapToken_ ,loose_id_decisions);
-    iEvent.getByToken(eleMediumIdMapToken_,medium_id_decisions);
-    iEvent.getByToken(eleTightIdMapToken_ ,tight_id_decisions);
+  //cout<<"Muons: "<<muons->size()<<endl;
+  nMuons_ = 0;
 
-    // Get MVA values and categories (optional)
-    //edm::Handle<edm::ValueMap<float> > mvaValues;
-    //edm::Handle<edm::ValueMap<int> > mvaCategories;
-    //iEvent.getByToken(mvaValuesMapToken_,mvaValues);
-    //iEvent.getByToken(mvaCategoriesMapToken_,mvaCategories);
+  for(unsigned i=0; i < muons->size();++i ) {
+    const auto mu = muons->ptrAt(i);
 
-    nElectrons_ = 0;
-    //cout<<"Event: "<<iEvent.id().event()<<"   "<<"Electrons: "<<electrons->size()<<endl;//"      trigger: "<<doubleElectron<<endl;
-
-    // Loop over electrons
-    for (size_t i = 0; i < electrons->size(); ++i){
-      const auto el = electrons->ptrAt(i);
-
-      // Kinematics
-      //if( el->pt() < 10 ) continue; // keep only electrons above 10 GeV
-
-      if(el->pt() > 10. && el->eta() < 2.7){
-
-	nElectrons_++;
-	//cout<<"ele pt: "<<el->pt()<<"   "<<"ele eta: "<<el->eta()<<endl;
-	pt_.push_back( el->pt() );
-	eta_.push_back( el->eta() );
-	rap_.push_back( el->rapidity() );
-	phi_.push_back( el->phi() );
-	energy_.push_back( el->energy() );
-	mass_.push_back( el->mass() );
-	charge_.push_back( el->charge() );
-
-	double R = sqrt(el->superCluster()->x()*el->superCluster()->x() + el->superCluster()->y()*el->superCluster()->y() +el->superCluster()->z()*el->superCluster()->z());
-	double Rt = sqrt(el->superCluster()->x()*el->superCluster()->x() + el->superCluster()->y()*el->superCluster()->y());
-
-	enSC_.push_back(el->superCluster()->energy());
-	preEnSC_.push_back(el->superCluster()->preshowerEnergy());
-	rawEnSC_.push_back(el->superCluster()->rawEnergy());
-	etSC_.push_back( (el->superCluster()->energy())*(Rt/R) );
-	etaSC_.push_back( el->superCluster()->eta() );
-	phiSC_.push_back( el->superCluster()->phi() );
-
-	// ECAL
-	full5x5_sigmaIetaIeta_.push_back( el->full5x5_sigmaIetaIeta() );
-	E1x5_.push_back(el->e1x5());
-	E2x5_.push_back(el->e2x5Max());
-	E5x5_.push_back(el->e5x5());
-	hOverE_.push_back( el->hcalOverEcal() );
-	etaScWidth_.push_back(el->superCluster()->etaWidth());
-	phiScWidth_.push_back(el->superCluster()->phiWidth());
-	r9_.push_back(el->r9());
-
-	// ECAL + Track
-	dEtaIn_.push_back( el->deltaEtaSuperClusterTrackAtVtx() );
-	dPhiIn_.push_back( el->deltaPhiSuperClusterTrackAtVtx() );
-	// |1/E-1/p| = |1/E - EoverPinner/E| is computed below. The if protects against ecalEnergy == inf or zero
-	// (always the case for miniAOD for electrons <5 GeV)
-	if( el->ecalEnergy() == 0 ){
-	  //printf("Electron energy is zero!\n");
-	  ooEmooP_.push_back( 1e30 );
-	}else if( !std::isfinite(el->ecalEnergy())){
-	  //printf("Electron energy is not finite!\n");
-	  ooEmooP_.push_back( 1e30 );
-	}else{
-	  ooEmooP_.push_back( fabs(1.0/el->ecalEnergy() - el->eSuperClusterOverP()/el->ecalEnergy() ) );
-	}
-
-	// Isolation
-	GsfElectron::PflowIsolationVariables pfIso = el->pfIsolationVariables();
-
-	// Compute isolation with delta beta correction for PU
-	isoChargedHadrons_.push_back( pfIso.sumChargedHadronPt );
-	isoNeutralHadrons_.push_back( pfIso.sumNeutralHadronEt );
-	isoPhotons_.push_back( pfIso.sumPhotonEt );
-	isoChargedFromPU_.push_back( pfIso.sumPUPt );
-
-	float abseta = fabs(el->superCluster()->eta());
-
-	// The effective areas constants file in the local release or default CMSSW, whichever is found
-	edm::FileInPath eaConstantsFile("RecoEgamma/ElectronIdentification/data/PHYS14/effAreaElectrons_cone03_pfNeuHadronsAndPhotons.txt");
-	EffectiveAreas effectiveAreas(eaConstantsFile.fullPath());
-	float eA = effectiveAreas.getEffectiveArea(abseta);
-
-	isoDeltaBeta_.push_back((pfIso.sumChargedHadronPt + max<float>( 0.0, pfIso.sumNeutralHadronEt + pfIso.sumPhotonEt - 0.5 * pfIso.sumPUPt))/(el->pt()));
-	isoRho_.push_back((pfIso.sumChargedHadronPt + max<float>( 0.0, pfIso.sumNeutralHadronEt + pfIso.sumPhotonEt - rho_ * eA))/(el->pt()));
-
-	// Track - Impact Parameter, Conversion rejection, Converted
-	reco::GsfTrackRef theTrack = el->gsfTrack();
-	d0_.push_back( (-1) * theTrack->dxy(firstGoodVertex->position() ) );
-	dz_.push_back( theTrack->dz( firstGoodVertex->position() ) );
-	expectedMissingInnerHits_.push_back(el->gsfTrack()->hitPattern().numberOfHits(reco::HitPattern::MISSING_INNER_HITS) );
-	bool passConvVeto = !ConversionTools::hasMatchedConversion(*el, conversions, theBeamSpot->position());
-	passConversionVeto_.push_back( (int) passConvVeto );
-	brem_.push_back(el->fbrem());
-
-	// Match to generator level truth
-	if(misMC) isTrue_.push_back( matchToTruth( el, genParticles) );
-
-	// ID
-	bool isPassVeto  = (*veto_id_decisions)[el];
-	bool isPassLoose  = (*loose_id_decisions)[el];
-	bool isPassMedium = (*medium_id_decisions)[el];
-	bool isPassTight  = (*tight_id_decisions)[el];
-	passVetoId_.push_back  ( (int)isPassVeto  );
-	passLooseId_.push_back ( (int)isPassLoose );
-	passMediumId_.push_back( (int)isPassMedium);
-	passTightId_.push_back ( (int)isPassTight );
-
-	//mvaValue_.push_back( (*mvaValues)[el] );
-	//mvaCategory_.push_back( (*mvaCategories)[el] );
-
-	eleInBarrel_.push_back(el->isEB());
-	eleInEndcap_.push_back(el->isEE());
-
-	// ECAL driven
-	eleEcalDrivenSeed_.push_back(el->ecalDrivenSeed());
-	//cout<<"ECAL driven: "<<el->ecalDrivenSeed()<<endl;
-
-      }
-    }
-
-    edm::Handle<edm::View<pat::Muon> > muons;
-    iEvent.getByToken(muonsMiniAODToken_,muons);
-
-    //edm::Handle< edm::View<reco::Vertex> > Vertices;
-    //iEvent.getByToken(VertexToken_,Vertices);
-
-    //bool muon::isTightMuon(const pat::Muon & recoMu, const reco::Vertex & vtx);
-
-    //cout<<"Muons: "<<muons->size()<<endl;
-    nMuons_ = 0;
-
-    for(unsigned i=0; i < muons->size();++i ) {
-      const auto mu = muons->ptrAt(i);
-
-      if(mu->pt() > 10. && mu->eta() < 2.7){
+    if(mu->pt() > 10. && mu->eta() < 2.7){
       nMuons_++;
 
       isGLBmuon_.push_back(mu->isGlobalMuon());
@@ -1097,138 +1100,138 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
       isoPFMuon_.push_back((mu->pfIsolationR04().sumChargedHadronPt + max<float>(0.0, mu->pfIsolationR04().sumNeutralHadronEt + mu->pfIsolationR04().sumPhotonEt - 0.5 * (mu->pfIsolationR04().sumPUPt)))/(mu->pt()));
 
-      }
     }
+  }
 
-    //cout<<"norm chi2 size: "<<normchi2Muon_.size()<<endl;
-    //cout<<"number of Valid MuonHits: "<<nhitsMuon_.size()<<endl;
+  //cout<<"norm chi2 size: "<<normchi2Muon_.size()<<endl;
+  //cout<<"number of Valid MuonHits: "<<nhitsMuon_.size()<<endl;
 
-    //cout<<"4"<<endl;
+  //cout<<"4"<<endl;
 
-    // Save this electron's info
-    electronTree_->Fill();
+  // Save this electron's info
+  electronTree_->Fill();
 
-    hlNames_.clear();
-    single_electron_triggers_in_run_mc.clear();
-    single_electron_triggers_in_run_data.clear();
-    double_electron_triggers_in_run.clear();
-    idx_sEleMC.clear();
-    idx_sEleData.clear();
-    idx_doubleElectron.clear();
+  hlNames_.clear();
+  single_electron_triggers_in_run_mc.clear();
+  single_electron_triggers_in_run_data.clear();
+  double_electron_triggers_in_run.clear();
+  idx_sEleMC.clear();
+  idx_sEleData.clear();
+  idx_doubleElectron.clear();
 
-    // Clear vectors
-    pt_leg1.clear();
-    eta_leg1.clear();
-    phi_leg1.clear();
-    pt_leg2.clear();
-    eta_leg2.clear();
-    phi_leg2.clear();
+  // Clear vectors
+  pt_leg1.clear();
+  eta_leg1.clear();
+  phi_leg1.clear();
+  pt_leg2.clear();
+  eta_leg2.clear();
+  phi_leg2.clear();
 
-    pt_singleEle_mc.clear();
-    eta_singleEle_mc.clear();
-    phi_singleEle_mc.clear();
+  pt_singleEle_mc.clear();
+  eta_singleEle_mc.clear();
+  phi_singleEle_mc.clear();
 
-    pt_doubleEle_data.clear();
-    eta_doubleEle_data.clear();
-    phi_doubleEle_data.clear();
+  pt_doubleEle_data.clear();
+  eta_doubleEle_data.clear();
+  phi_doubleEle_data.clear();
 
-    if(misMC){
-      ZMass_.clear();
-      ZPt_.clear();
-      ZEta_.clear();
-      ZRap_.clear();
-      ZPhi_.clear();
-      gPre_energy_.clear();
-      gPre_pt_.clear();
-      gPre_px_.clear();
-      gPre_py_.clear();
-      gPre_pz_.clear();
-      gPre_eta_.clear();
-      gPre_rap_.clear();
-      gPre_phi_.clear();
-      gPost_energy_.clear();
-      gPost_pt_.clear();
-      gPost_px_.clear();
-      gPost_py_.clear();
-      gPost_pz_.clear();
-      gPost_eta_.clear();
-      gPost_rap_.clear();
-      gPost_phi_.clear();
+  if(misMC){
+    ZMass_.clear();
+    ZPt_.clear();
+    ZEta_.clear();
+    ZRap_.clear();
+    ZPhi_.clear();
+    gPre_energy_.clear();
+    gPre_pt_.clear();
+    gPre_px_.clear();
+    gPre_py_.clear();
+    gPre_pz_.clear();
+    gPre_eta_.clear();
+    gPre_rap_.clear();
+    gPre_phi_.clear();
+    gPost_energy_.clear();
+    gPost_pt_.clear();
+    gPost_px_.clear();
+    gPost_py_.clear();
+    gPost_pz_.clear();
+    gPost_eta_.clear();
+    gPost_rap_.clear();
+    gPost_phi_.clear();
 
-      isTrue_.clear();
-    }
+    isTrue_.clear();
+  }
 
-    pt_.clear();
-    eta_.clear();
-    rap_.clear();
-    phi_.clear();
-    energy_.clear();
-    mass_.clear();
-    charge_.clear();
+  pt_.clear();
+  eta_.clear();
+  rap_.clear();
+  phi_.clear();
+  energy_.clear();
+  mass_.clear();
+  charge_.clear();
 
-    enSC_.clear();
-    preEnSC_.clear();
-    rawEnSC_.clear();
-    etSC_.clear();
-    etaSC_.clear();
-    phiSC_.clear();
-    dEtaIn_.clear();
-    dPhiIn_.clear();
-    full5x5_sigmaIetaIeta_.clear();
-    E1x5_.clear();
-    E2x5_.clear();
-    E5x5_.clear();
-    hOverE_.clear();
-    etaScWidth_.clear();
-    phiScWidth_.clear();
-    r9_.clear();
+  enSC_.clear();
+  preEnSC_.clear();
+  rawEnSC_.clear();
+  etSC_.clear();
+  etaSC_.clear();
+  phiSC_.clear();
+  dEtaIn_.clear();
+  dPhiIn_.clear();
+  full5x5_sigmaIetaIeta_.clear();
+  E1x5_.clear();
+  E2x5_.clear();
+  E5x5_.clear();
+  hOverE_.clear();
+  etaScWidth_.clear();
+  phiScWidth_.clear();
+  r9_.clear();
 
-    isoChargedHadrons_.clear();
-    isoNeutralHadrons_.clear();
-    isoPhotons_.clear();
-    isoChargedFromPU_.clear();
-    isoDeltaBeta_.clear();
-    isoRho_.clear();
-    ooEmooP_.clear();
-    d0_.clear();
-    dz_.clear();
-    expectedMissingInnerHits_.clear();
-    passConversionVeto_.clear();
-    brem_.clear();
+  isoChargedHadrons_.clear();
+  isoNeutralHadrons_.clear();
+  isoPhotons_.clear();
+  isoChargedFromPU_.clear();
+  isoDeltaBeta_.clear();
+  isoRho_.clear();
+  ooEmooP_.clear();
+  d0_.clear();
+  dz_.clear();
+  expectedMissingInnerHits_.clear();
+  passConversionVeto_.clear();
+  brem_.clear();
 
-    passVetoId_.clear();
-    passLooseId_.clear();
-    passMediumId_.clear();
-    passTightId_.clear();
-    //mvaCategory_.clear();
-    //mvaValue_.clear();
-    eleEcalDrivenSeed_.clear();
+  passVetoId_.clear();
+  passLooseId_.clear();
+  passMediumId_.clear();
+  passTightId_.clear();
+  //mvaCategory_.clear();
+  //mvaValue_.clear();
+  eleEcalDrivenSeed_.clear();
 
-    isLoose.clear();
-    //isMedium.clear();
-    isTight.clear();
-    isGLBmuon_.clear();
-    isPFmuon_.clear();
+  isLoose.clear();
+  //isMedium.clear();
+  isTight.clear();
+  isGLBmuon_.clear();
+  isPFmuon_.clear();
 
-    ptMuon_.clear();
-    etaMuon_.clear();
-    phiMuon_.clear();
-    energyMuon_.clear();
-    chargeMuon_.clear();
+  ptMuon_.clear();
+  etaMuon_.clear();
+  phiMuon_.clear();
+  energyMuon_.clear();
+  chargeMuon_.clear();
 
-    normchi2Muon_.clear();
-    nhitsMuon_.clear();
-    nMatchesMuon_.clear();
-    npixelHitsMuon_.clear();
-    trackerLayersMuon_.clear();
-    dxyVtxMuon_.clear();
-    dzVtxMuon_.clear();
+  normchi2Muon_.clear();
+  nhitsMuon_.clear();
+  nMatchesMuon_.clear();
+  npixelHitsMuon_.clear();
+  trackerLayersMuon_.clear();
+  dxyVtxMuon_.clear();
+  dzVtxMuon_.clear();
 
-    isoChargedHadronPfR04Muon_.clear();
-    isoNeutralHadronPfR04Muon_.clear();
-    isoGammaPfR04Muon_.clear();
-    isoChargedFromPUMuon_.clear();
-    isoPFMuon_.clear();
+  isoChargedHadronPfR04Muon_.clear();
+  isoNeutralHadronPfR04Muon_.clear();
+  isoGammaPfR04Muon_.clear();
+  isoChargedFromPUMuon_.clear();
+  isoPFMuon_.clear();
 
 }
 // ------------ method called once each job just before starting event loop  ------------
