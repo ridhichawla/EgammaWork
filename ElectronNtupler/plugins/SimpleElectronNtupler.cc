@@ -892,8 +892,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
      int firstGoodVertexIdx = 0;
      
      // Find the first vertex in the collection that passes  good quality criteria
-     VertexCollection::const_iterator firstGoodVertex = vertices->end();
-
      for (VertexCollection::const_iterator vtx = vertices->begin(); vtx != vertices->end(); ++vtx, ++firstGoodVertexIdx) {
        // Check the goodness
        if (vtx->ndof()>=4. && vtx->position().Rho()<=2.0 && fabs(vtx->position().Z())<=24.0) {
@@ -901,6 +899,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
        }
      }
 
+     VertexCollection::const_iterator firstGoodVertex = vertices->end();
      for (VertexCollection::const_iterator vtx = vertices->begin(); vtx != vertices->end(); ++vtx, ++firstGoodVertexIdx) {
        bool isFake = vtx->isFake();
        if( !isAOD )
