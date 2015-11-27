@@ -131,11 +131,11 @@ process.ntupler = cms.EDAnalyzer('SimpleElectronNtupler',
 				 #probeFilterName = cms.vstring("hltEle23Ele12CaloIdTrackIdIsoTrackIsoLeg2Filter")
                                  )
 
-#process.primaryVertexFilter  = cms.EDFilter("VertexSelector",
-#      src = cms.InputTag('offlinePrimaryVertices'),
-#      cut = cms.string('!isFake && isValid && ndof >= 4.0 && position.Rho <= 2.0 && abs(z) <= 24'),
-#      filter = cms.bool(True)
-#      )
+process.primaryVertexFilter  = cms.EDFilter("VertexSelector",
+      src = cms.InputTag('offlinePrimaryVertices'),
+      cut = cms.string('!isFake && isValid && ndof >= 4.0 && position.Rho <= 2.0 && abs(z) <= 24'),
+      filter = cms.bool(True)
+      )
 
 process.TFileService = cms.Service("TFileService",
                                    fileName = cms.string('crosscheck.root')
