@@ -132,7 +132,7 @@ process.ntupler = cms.EDAnalyzer('SimpleElectronNtupler',
                                  )
 
 process.primaryVertexFilter  = cms.EDFilter("VertexSelector",
-      src = cms.InputTag('offlinePrimaryVertices'),
+      src = cms.InputTag('offlineSlimmedPrimaryVertices'),
       cut = cms.string('!isFake && isValid && ndof >= 4.0 && position.Rho <= 2.0 && abs(z) <= 24'),
       filter = cms.bool(True)
       )
@@ -142,5 +142,6 @@ process.TFileService = cms.Service("TFileService",
                                    )
 
 
-process.p = cms.Path(process.egmGsfElectronIDSequence * process.ntupler)
+process.p = cms.Path(process.egmGsfElectronIDSequence * process.primaryVertexFilter * process.ntupler)
+#process.p = cms.Path(process.egmGsfElectronIDSequence * process.ntupler)
 #process.p = cms.Path(process.ntupler)
