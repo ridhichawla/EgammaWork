@@ -169,7 +169,7 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     Int_t nPUTrue_;    // true pile-up
     Int_t nPU_;        // generated pile-up
     Int_t nPV_;        // number of reconsrtucted primary vertices
-    Int_t nvtx_;       // good vertices
+    //Int_t nvtx_;       // good vertices
     Float_t rho_;      // the rho variable
 
     // Trigger
@@ -451,7 +451,7 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
 
   electronTree_->Branch("pvNTracks"    ,  &pvNTracks_ , "pvNTracks/I");
 
-  electronTree_->Branch("nvtx"       ,  &nvtx_    , "nvtx/I");
+  //electronTree_->Branch("nvtx"       ,  &nvtx_    , "nvtx/I");
   electronTree_->Branch("nPV"        ,  &nPV_     , "nPV/I");
   electronTree_->Branch("nPU"        ,  &nPU_     , "nPU/I");
   electronTree_->Branch("nPUTrue"    ,  &nPUTrue_ , "nPUTrue/I");
@@ -878,7 +878,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
      }
      //cout<<"2"<<endl;
      
-     nvtx_ = 0;
+     //nvtx_ = 0;
      
      // Get PV
      edm::Handle<reco::VertexCollection> vertices;
@@ -887,17 +887,17 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
      else
        iEvent.getByToken(vtxMiniAODToken_, vertices);
 
-     nPV_ = vertices->size();
      if (vertices->empty()) return; // skip the event if no PV found
+     nPV_ = vertices->size();
      int firstGoodVertexIdx = 0;
      
      // Find the first vertex in the collection that passes  good quality criteria
-     for (VertexCollection::const_iterator vtx = vertices->begin(); vtx != vertices->end(); ++vtx, ++firstGoodVertexIdx) {
+     /*for (VertexCollection::const_iterator vtx = vertices->begin(); vtx != vertices->end(); ++vtx, ++firstGoodVertexIdx) {
        // Check the goodness
        if (vtx->ndof()>=4. && vtx->position().Rho()<=2.0 && fabs(vtx->position().Z())<=24.0) {
 	 nvtx_++;
        }
-     }
+     }*/
 
      VertexCollection::const_iterator firstGoodVertex = vertices->end();
      for (VertexCollection::const_iterator vtx = vertices->begin(); vtx != vertices->end(); ++vtx, ++firstGoodVertexIdx) {
