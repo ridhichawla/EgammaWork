@@ -56,7 +56,7 @@ public :
    vector<double>  *phi_sMuon;
    Int_t           nEle;
    Int_t           nGenEle;
-   //Int_t           tauFlag;
+   Int_t           tauFlag;
    vector<float>   *gPre_energy;
    vector<float>   *gPre_px;
    vector<float>   *gPre_py;
@@ -161,7 +161,7 @@ public :
    TBranch        *b_phi_sMuon;   //!
    TBranch        *b_nEle;   //!
    TBranch        *b_nGenEle;   //!
-   //TBranch        *b_tauFlag;
+   TBranch        *b_tauFlag;
    TBranch        *b_gPre_energy;   //!
    TBranch        *b_gPre_px;   //!
    TBranch        *b_gPre_py;   //!
@@ -254,9 +254,9 @@ mc13TeV::mc13TeV(TTree *tree) : fChain(0)
   // if parameter tree is not specified (or zero), connect the file
   // used to generate this class and read the Tree.
   if (tree == 0) {
-    TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("/tmp/rchawla/WJetsToLNu_miniAODv2.root");
+    TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("/tmp/rchawla/DYJetsToLL_M-50_miniAODv2.root");
     if (!f || !f->IsOpen()) {
-      f = new TFile("/tmp/rchawla/WJetsToLNu_miniAODv2.root");
+      f = new TFile("/tmp/rchawla/DYJetsToLL_M-50_miniAODv2.root");
     }
     TDirectory * dir = (TDirectory*)f->Get("ntupler;1");
     dir->GetObject("ElectronTree",tree);
@@ -423,7 +423,7 @@ void mc13TeV::Init(TTree *tree)
   fChain->SetBranchAddress("phi_sMuon", &phi_sMuon, &b_phi_sMuon);
   fChain->SetBranchAddress("nEle", &nEle, &b_nEle);
   fChain->SetBranchAddress("nGenEle", &nGenEle, &b_nGenEle);
-  //fChain->SetBranchAddress("tauFlag", &tauFlag, &b_tauFlag);
+  fChain->SetBranchAddress("tauFlag", &tauFlag, &b_tauFlag);
   fChain->SetBranchAddress("gPre_energy", &gPre_energy, &b_gPre_energy);
   fChain->SetBranchAddress("gPre_px", &gPre_px, &b_gPre_px);
   fChain->SetBranchAddress("gPre_py", &gPre_py, &b_gPre_py);

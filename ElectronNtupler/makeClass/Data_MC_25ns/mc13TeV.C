@@ -23,7 +23,7 @@ void mc13TeV::Loop()
   TH1F *weights_ = (TH1F*)DATA_puDist->Clone("weights_");
   weights_->Divide(MC_puDist);*/
 
-  TFile *file = new TFile("wjets.root", "recreate");
+  TFile *file = new TFile("dyll_M-50.root", "recreate");
   //std::ofstream wgts;
   //wgts.open ("Weights.txt");
 
@@ -126,44 +126,41 @@ void mc13TeV::Loop()
 
     //cout<<"1"<<endl;
 
+    if(!doubleElectron) continue;
+    if(!doubleElectron) cout<<"Trigger requirement not checked properly"<<endl;
+
     if(!tauFlag){
       ++n_notaus;
-      if(nEle>=2) {
-	++n_ele;
-	if(doubleElectron) {
-	  ++n_trig;
-	  if(doubleElectron == 0) cout<<"Wrong"<<endl;
 
-	  for(int k=0;k<nEle;k++){
+      for(int k=0;k<nEle;k++){
 
-	    if(passMediumId->at(index[k]) == 1 && eleEcalDrivenSeed->at(index[k]) == 1){
-	      id++;
-	      if(fabs(eta->at(index[k])) < 2.5 && pt->at(index[k]) > 10. && !(fabs(etaSC->at(index[k])) > 1.4442 && fabs(etaSC->at(index[k])) < 1.566)){
-		kin++;
+	if(passMediumId->at(index[k]) == 1 && eleEcalDrivenSeed->at(index[k]) == 1){
+	  id++;
+	  if(fabs(eta->at(index[k])) < 2.5 && !(fabs(etaSC->at(index[k])) > 1.4442 && fabs(etaSC->at(index[k])) < 1.566)){
+	    kin++;
 
-		if(passMediumId->at(index[k]) == 0) cout<<"Wrong ID: "<<endl;
-		if(eleEcalDrivenSeed->at(index[k]) == 0) cout<<"Wrong ECAL ID: "<<endl;
+	    if(passMediumId->at(index[k]) == 0) cout<<"Wrong ID: "<<endl;
+	    if(eleEcalDrivenSeed->at(index[k]) == 0) cout<<"Wrong ECAL ID: "<<endl;
 
-		good_elec = good_elec + 1;
+	    good_elec = good_elec + 1;
 
-		newscEt.push_back(etSC->at(index[k]));
-		newscEta.push_back(etaSC->at(index[k]));
-		newscPhi.push_back(phiSC->at(index[k]));
-		newscEnr.push_back(enSC->at(index[k]));
-		newelePt.push_back(pt->at(index[k]));
-		neweleEta.push_back(eta->at(index[k]));
-		neweleEnr.push_back(energy->at(index[k]));
-		newelePhi.push_back(phi->at(index[k]));
-		neweleCharge.push_back(charge->at(index[k]));
-	      }
-	    }
-	  }
-	}
-      }
+	    newscEt.push_back(etSC->at(index[k]));
+	    newscEta.push_back(etaSC->at(index[k]));
+	    newscPhi.push_back(phiSC->at(index[k]));
+	    newscEnr.push_back(enSC->at(index[k]));
+	    newelePt.push_back(pt->at(index[k]));
+	    neweleEta.push_back(eta->at(index[k]));
+	    neweleEnr.push_back(energy->at(index[k]));
+	    newelePhi.push_back(phi->at(index[k]));
+	    neweleCharge.push_back(charge->at(index[k]));
+
+	  } // eta
+	} // ID
+      } // nEle 
 
       //cout<<"2"<<endl;
 
-      if(good_elec>=2){
+      if(good_elec==2){
 	if(newelePt.at(0) < newelePt.at(1)) cout<<"event: "<<jentry<<"   "<<"Sorting not proper: "<<"   "<<"reco pt lead: "<<newelePt.at(0)<<"   "<<"reco pt sublead: "<<newelePt.at(1)<<endl;
 
 	if(newelePt.at(0) > 20. && newelePt.at(1) > 10.){
