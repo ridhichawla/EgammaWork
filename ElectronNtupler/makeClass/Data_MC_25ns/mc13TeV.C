@@ -44,7 +44,7 @@ void mc13TeV::Loop()
   //MC_puDistW->Sumw2();
 
   TH1D *weights = new TH1D("weights", "weights", 60000, -300000, 300000);
-  
+
   TH1F *elePt  = new TH1F("elePt", "elePt", 100, 0, 700);
   TH1F *eleEta = new TH1F("eleEta", "eleEta", 50, -2.5, 2.5);
   TH1F *scEt   = new TH1F("scEt", "scEt", 100, 0 ,700);
@@ -97,9 +97,9 @@ void mc13TeV::Loop()
     int index[pt->size()];
     float ptnew[pt->size()];
 
-    for(unsigned int r=0; r<pt->size(); r++)
+    for(unsigned int el=0; el<pt->size(); el++)
     {
-      ptnew[r]=pt->at(r);
+      ptnew[el]=pt->at(el);
     }
 
     int sizer = sizeof(ptnew)/sizeof(ptnew[0]);
@@ -125,8 +125,8 @@ void mc13TeV::Loop()
     weights->Fill(theWeight);
 
     //cout<<"1"<<endl;
-/*
-    //if(!tauFlag){
+
+    if(!tauFlag){
       ++n_notaus;
       if(nEle>=2) {
 	++n_ele;
@@ -160,66 +160,66 @@ void mc13TeV::Loop()
 	  }
 	}
       }
-    //}
 
-    //cout<<"2"<<endl;
+      //cout<<"2"<<endl;
 
-    if(good_elec>=2){
-      if(newelePt.at(0) < newelePt.at(1)) cout<<"event: "<<jentry<<"   "<<"Sorting not proper: "<<"   "<<"reco pt lead: "<<newelePt.at(0)<<"   "<<"reco pt sublead: "<<newelePt.at(1)<<endl;
+      if(good_elec>=2){
+	if(newelePt.at(0) < newelePt.at(1)) cout<<"event: "<<jentry<<"   "<<"Sorting not proper: "<<"   "<<"reco pt lead: "<<newelePt.at(0)<<"   "<<"reco pt sublead: "<<newelePt.at(1)<<endl;
 
-      if(newelePt.at(0) > 20. && newelePt.at(1) > 10.){
-	++n_all_cuts;
+	if(newelePt.at(0) > 20. && newelePt.at(1) > 10.){
+	  ++n_all_cuts;
 
-	for(unsigned int i=0; i<newelePt.size(); i++)
-	{
-	  elePt->Fill(newelePt[i]);
-	  eleEta->Fill(neweleEta[i]);
-	  scEt->Fill(newscEt[i]);
-	  scEta->Fill(newscEta[i]);
+	  for(unsigned int i=0; i<newelePt.size(); i++)
+	  {
+	    elePt->Fill(newelePt[i]);
+	    eleEta->Fill(neweleEta[i]);
+	    scEt->Fill(newscEt[i]);
+	    scEta->Fill(newscEta[i]);
+	  }
+
+	  elePt_lead->Fill(newelePt.at(0));
+	  eleEta_lead->Fill(neweleEta.at(0));
+	  elePt_slead->Fill(newelePt.at(1));
+	  eleEta_slead->Fill(neweleEta.at(1));
+
+	  scEt_lead->Fill(newscEt.at(0));
+	  scEt_slead->Fill(newscEt.at(1));
+	  scEta_lead->Fill(newscEta.at(0));
+	  scEta_slead->Fill(newscEta.at(1));
+
+	  ele1.SetPtEtaPhiE(newscEt.at(0),newscEta.at(0),newscPhi.at(0),newscEnr.at(0));
+	  ele2.SetPtEtaPhiE(newscEt.at(1),newscEta.at(1),newscPhi.at(1),newscEnr.at(1));
+
+	  dielectron=ele1+ele2;
+	  Z_Mass = dielectron.M();
+
+	  //if(Z_Mass >= 60 && Z_Mass <= 120){ isMass = true; ++nZ;}
+
+	  Z_Pt = dielectron.Pt();
+	  Z_Y = dielectron.Y();
+	  Z_Rap = dielectron.Rapidity();
+	  Z_Eta = dielectron.Eta();
+	  Z_Phi = dielectron.Phi();
+
+	  ZMass_0to400->Fill(Z_Mass);
+	  ZMass_60to120->Fill(Z_Mass);
+	  ZMass_->Fill(Z_Mass);
+	  ZPt_->Fill(Z_Pt);
+	  ZY_->Fill(Z_Y);
+	  ZRap_->Fill(Z_Rap);
+	  ZEta_->Fill(Z_Eta);
+	  ZPhi_->Fill(Z_Phi);
 	}
-
-	elePt_lead->Fill(newelePt.at(0));
-	eleEta_lead->Fill(neweleEta.at(0));
-	elePt_slead->Fill(newelePt.at(1));
-	eleEta_slead->Fill(neweleEta.at(1));
-
-	scEt_lead->Fill(newscEt.at(0));
-	scEt_slead->Fill(newscEt.at(1));
-	scEta_lead->Fill(newscEta.at(0));
-	scEta_slead->Fill(newscEta.at(1));
-
-	ele1.SetPtEtaPhiE(newscEt.at(0),newscEta.at(0),newscPhi.at(0),newscEnr.at(0));
-	ele2.SetPtEtaPhiE(newscEt.at(1),newscEta.at(1),newscPhi.at(1),newscEnr.at(1));
-
-	dielectron=ele1+ele2;
-	Z_Mass = dielectron.M();
-
-	//if(Z_Mass >= 60 && Z_Mass <= 120){ isMass = true; ++nZ;}
-
-	Z_Pt = dielectron.Pt();
-	Z_Y = dielectron.Y();
-	Z_Rap = dielectron.Rapidity();
-	Z_Eta = dielectron.Eta();
-	Z_Phi = dielectron.Phi();
-
-	ZMass_0to400->Fill(Z_Mass);
-	ZMass_60to120->Fill(Z_Mass);
-	ZMass_->Fill(Z_Mass);
-	ZPt_->Fill(Z_Pt);
-	ZY_->Fill(Z_Y);
-	ZRap_->Fill(Z_Rap);
-	ZEta_->Fill(Z_Eta);
-	ZPhi_->Fill(Z_Phi);
       }
-    }
 
-    if(id>=2){
-      n_id++;
-      if(kin>=2){
-	n_kin++;
-      } // id
-    } // kin
-*/
+      if(id>=2){
+	n_id++;
+	if(kin>=2){
+	  n_kin++;
+	} // id
+      } // kin
+
+    } // tauFlag
   } // event
 
   //cout<<"no taus: "<<n_notaus<<"   "<<"ele: "<<n_ele<<"   "<<"trigger: "<<n_trig<<"   "<<"ID: "<<n_id<<"   "<<"kin: "<<n_kin<<"   "<<"all: "<<n_all_cuts<<endl;
