@@ -291,9 +291,9 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     // all muon variables
     Int_t nMuons_;
 
-    std::vector<bool>   isLoose;
-    //std::vector<bool>   isMedium;
-    std::vector<bool>   isTight;
+    std::vector<bool>   isLoose_;
+    std::vector<bool>   isTight_;
+    std::vector<bool>   isHEEP_;
     std::vector<int>    isGLBmuon_;
     std::vector<int>    isPFmuon_;
 
@@ -308,6 +308,7 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     std::vector<double> isoGammaPfR04Muon_;
     std::vector<double> isoChargedFromPUMuon_;
     std::vector<double> isoPFMuon_;
+    std::vector<double> isoTrkMuon_;
 
     double DeltaR(const pat::Electron& e, std::vector<pat::TriggerObjectStandAlone> object);
 };
@@ -514,9 +515,10 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronTree_->Branch("isPFmuon", &isPFmuon_);
 
   electronTree_->Branch("nMuons", &nMuons_);
-  electronTree_->Branch("isLoose", &isLoose);
+  electronTree_->Branch("isLoose", &isLoose_);
   //electronTree_->Branch("isMedium", &isMedium);
-  electronTree_->Branch("isTight", &isTight);
+  electronTree_->Branch("isTight", &isTight_);
+  electronTree_->Branch("isHEEP", &isHEEP_);
 
   electronTree_->Branch("ptMuon", &ptMuon_);
   electronTree_->Branch("etaMuon", &etaMuon_);
@@ -529,6 +531,7 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronTree_->Branch("isoGammaPfR04Muon", &isoGammaPfR04Muon_);
   electronTree_->Branch("isoChargedFromPUMuon", &isoChargedFromPUMuon_);
   electronTree_->Branch("isoPFMuon", &isoPFMuon_);
+  electronTree_->Branch("isoTrkMuon", &isoTrkMuon_);
 
 }
 
@@ -746,13 +749,13 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       const GenParticle &gen = (*genParticles)[i];
       int id = gen.pdgId();
 
-      if(abs(id)==15 && gen.fromHardProcessDecayed()){
+      if(abs(id)==15 && gen.fromHardProcessDecayed()==1){
 	gen_ptTau_.push_back(gen.pt());
 	gen_etaTau_.push_back(gen.eta());
 	gen_phiTau_.push_back(gen.phi());
       }
 
-      if (fabs(id)==11 && gen.isPromptFinalState()==1){//st==1) 
+      if (fabs(id)==11 && gen.fromHardProcessFinalState()==1){ // post FSR
 	gPost_energy_.push_back(gen.energy());
 	gPost_px_.push_back(gen.px());
 	gPost_py_.push_back(gen.py());
@@ -764,8 +767,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
       }
 
-
-      if(fabs(id)==11 && gen.fromHardProcessBeforeFSR()==1){ //&& st==23 && mother->pdgId()==23)
+      if(fabs(id)==11 && gen.fromHardProcessBeforeFSR()==1){
 	nGenElectrons_++;
 
 	gPre_energy_.push_back(gen.energy());
@@ -842,7 +844,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     const auto el = electrons->ptrAt(i);
 
     // Kinematics
-    //if( el->pt() < 10 ) continue; // keep only electrons above 10 GeV
 
     if(el->pt() > 10. && el->eta() < 2.7){
 
@@ -968,17 +969,15 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
       // isLoose
       bool isLooseId = muons->at(i).isLooseMuon();
-      isLoose.push_back(isLooseId);
-
-      // isMedium
-      //bool isMediumId = muons->at(i).isMediumMuon(vertices->at(0));
-      //isMedium.push_back(isMediumId);
+      isLoose_.push_back(isLooseId);
 
       // isTight
       bool isTightId = muons->at(i).isTightMuon(vertices->at(0));
-      isTight.push_back(isTightId);
+      isTight_.push_back(isTightId);
 
-      //cout<<"muon pt: "<<mu->pt()<<"   "<<"muon eta: "<<mu->eta()<<endl;//"   "<<"phi: "<<mu->phi()<<"   "<<"energy: "<<mu->energy()<<"   "<<"charge: "<<mu->charge()<<endl;
+      // is HEEP
+      bool isHEEPId = muons->at(i).isHighPtMuon(vertices->at(0));
+      isHEEP_.push_back(isHEEPId);
 
       // pf isolation 
       isoChargedHadronPfR04Muon_.push_back(mu->pfIsolationR04().sumChargedHadronPt);
@@ -987,6 +986,9 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       isoChargedFromPUMuon_.push_back(mu->pfIsolationR04().sumPUPt);
 
       isoPFMuon_.push_back((mu->pfIsolationR04().sumChargedHadronPt + max<float>(0.0, mu->pfIsolationR04().sumNeutralHadronEt + mu->pfIsolationR04().sumPhotonEt - 0.5 * (mu->pfIsolationR04().sumPUPt)))/(mu->pt()));
+
+      // tracker isolation
+      isoTrkMuon_.push_back((mu->isolationR03().sumPt)/mu->pt());
 
     }
   }
@@ -1097,9 +1099,9 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   eleInBarrel_.clear();
   eleInEndcap_.clear();
 
-  isLoose.clear();
-  //isMedium.clear();
-  isTight.clear();
+  isLoose_.clear();
+  isTight_.clear();
+  isHEEP_.clear();
   isGLBmuon_.clear();
   isPFmuon_.clear();
 
@@ -1114,6 +1116,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   isoGammaPfR04Muon_.clear();
   isoChargedFromPUMuon_.clear();
   isoPFMuon_.clear();
+  isoTrkMuon_.clear();
 
 }
 // ------------ method called once each job just before starting event loop  ------------
