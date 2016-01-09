@@ -950,25 +950,25 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       fourmom.SetPxPyPzE(genlep.px(), genlep.py(), genlep.pz(), genlep.energy());
       //TVector3 p = fourmom.Vect();
 
-      /*int n = genlep.numberOfDaughters();
-	if(fabs(id)==11){
+      int n = genlep.numberOfDaughters();
+      if(fabs(id)==11){
 	for(int j = 0; j < n; ++j) {
-	const Candidate * d = genlep.daughter(j);
-	int dauId = d->pdgId();
-      //cout<<"ID: "<<id<<"   "<<"Daughter ID: "<<dauId<<endl;
+	  const Candidate * d = genlep.daughter(j);
+	  int dauId = d->pdgId();
+	  //cout<<"ID: "<<id<<"   "<<"Daughter ID: "<<dauId<<endl;
 
-      if(fabs(dauId) == 22){
-      Double_t dR = deltaR(d->eta(), d->phi(), genlep.eta(), genlep.phi());
-      cout<<"dR: "<<dR<<"   "<<"ID: "<<id<<"   "<<"Daughter ID: "<<dauId<<endl;
+	  if(fabs(dauId) == 22){
+	    Double_t dR = deltaR(d->eta(), d->phi(), genlep.eta(), genlep.phi());
+	    cout<<"dR: "<<dR<<"   "<<"ID: "<<id<<"   "<<"Daughter ID: "<<dauId<<endl;
 
-      // Sum of all photon's momentum near the post-FSR electron
-      if(dR<0.1)
-      {
-      SumPhotonMom = SumPhotonMom + fourmom.Momentum;
+	    // Sum of all photon's momentum near the post-FSR electron
+	    if(dR<0.1)
+	    {
+	      SumPhotonMom = SumPhotonMom + fourmom.Momentum;
+	    }
+	  }
+	}
       }
-      }
-      }
-      }*/
 
       //const Candidate * Mother = genlep.mother(i);
       //int momId = Mother->pdgId();
