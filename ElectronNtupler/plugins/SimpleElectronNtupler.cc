@@ -995,7 +995,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
       }
 
-      if(fabs(id)==11 && genlep.fromHardProcessBeforeFSR()==1){
+      /*if(fabs(id)==11 && genlep.fromHardProcessBeforeFSR()==1){
 	nGenElectrons_++;
 
 	gen_preFSR_ene_.push_back(genlep.energy());
@@ -1007,7 +1007,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	gen_preFSR_rap_.push_back(genlep.rapidity());
 	gen_preFSR_phi_.push_back(genlep.phi());
 
-      }
+      }*/
 
       // Separating the taus coming from Z decay
       if(abs(id)==15 && genlep.fromHardProcessDecayed()==1){
