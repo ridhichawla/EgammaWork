@@ -267,7 +267,9 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     // all electron variables
     Int_t nElectrons_;
     Int_t nGenElectrons_;
-    Double_t SumPhotonMom;
+
+    TLorentzVector gen_preFSR;
+    TLorentzVector SumPhotonMom;
 
     std::vector<Float_t> gen_preFSR_ene_;
     std::vector<Float_t> gen_preFSR_px_;
@@ -939,7 +941,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   if(misMC && misSIG){
     nGenElectrons_ = 0;
     tauFlag = 0;
-    SumPhotonMom = 0.;
+    SumPhotonMom.SetPxPyPzE(0., 0., 0., 0.);
 
     for(size_t i = 0; i < genParticles->size(); ++i){
       const GenParticle &genlep = (*genParticles)[i];
@@ -947,11 +949,13 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       int id = genlep.pdgId();
 
       TLorentzVector fourmom;
+
       fourmom.SetPxPyPzE(genlep.px(), genlep.py(), genlep.pz(), genlep.energy());
-      //TVector3 p = fourmom.Vect();
+      gen_preFSR.SetPxPyPzE(genlep.px(), genlep.py(), genlep.pz(), genlep.energy());
 
       int n = genlep.numberOfDaughters();
       if(fabs(id)==11){
+
 	for(int j = 0; j < n; ++j) {
 	  const Candidate * d = genlep.daughter(j);
 	  int dauId = d->pdgId();
@@ -959,15 +963,20 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
 	  if(fabs(dauId) == 22){
 	    Double_t dR = deltaR(d->eta(), d->phi(), genlep.eta(), genlep.phi());
-	    cout<<"dR: "<<dR<<"   "<<"ID: "<<id<<"   "<<"Daughter ID: "<<dauId<<endl;
+	    cout<<"dR: "<<dR<<"   "<<"ID: "<<genlep.pdgId()<<"   "<<"Daughter ID: "<<dauId<<endl;
 
 	    // Sum of all photon's momentum near the post-FSR electron
 	    if(dR<0.1)
 	    {
-	      SumPhotonMom = SumPhotonMom + fourmom.Momentum;
+	      SumPhotonMom = SumPhotonMom + fourmom;
+	      cout<<"fourmom pt: "<<fourmom.Pt()<<endl;
 	    }
 	  }
 	}
+
+	//cout<<"pt: "<<SumPhotonMom.Pt()<<endl;
+	gen_preFSR = gen_preFSR + SumPhotonMom;
+
       }
 
       //const Candidate * Mother = genlep.mother(i);
@@ -985,21 +994,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	gen_postFSR_phi_.push_back(genlep.phi());
 
       }
-
-      // Only for the photons whose mother is electron or anti-electron
-      /*if( fabs(id) == 22 && fabs(Mother->pdgId()) == 11)
-	{
-
-	Double_t dR = deltaR(gen_postFSR_eta_[i], gen_postFSR_phi_[i], genlep.eta(), genlep.phi());
-      //cout<<"dR: "<<dR<<endl;
-
-      // Sum of all photon's momentum near the post-FSR electron
-      if(dR<0.1)
-      {
-      //SumPhotonMom = SumPhotonMom + p;
-      }
-
-      }*/
 
       if(fabs(id)==11 && genlep.fromHardProcessBeforeFSR()==1){
 	nGenElectrons_++;
@@ -1033,7 +1027,9 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   }
 
-  //cout<<"gen post FSR: "<<gen_postFSR_pt_.size()<<endl;
+  cout<<"photon pt: "<<SumPhotonMom.Pt()<<endl;
+  cout<<"pre FSR pt: "<<gen_preFSR.Pt()<<endl;
+  cout<<"   "<<endl;
 
   //cout<<"2"<<endl;
 
