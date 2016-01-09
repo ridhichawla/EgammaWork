@@ -12,16 +12,16 @@ process.load("Geometry.CaloEventSetup.CaloTopology_cfi");
 #
 # Define input data to read
 #
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) ) 
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
 #process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 #process.GlobalTag.globaltag = 'MCRUN2_74_V9::All'                                             #MC
 #process.GlobalTag.globaltag = 'GR_E_V49::All'                                                 #Data
 
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff")
-#process.GlobalTag.globaltag = cms.string("74X_dataRun2_reMiniAOD_v0")#74X_dataRun2_Prompt_v4")                            #Data
+process.GlobalTag.globaltag = cms.string("74X_dataRun2_reMiniAOD_v0")                                     #Data
 #process.GlobalTag.globaltag = cms.string("74X_dataRun2_Prompt_v4")
-process.GlobalTag.globaltag = cms.string("74X_mcRun2_asymptotic_v2")                                      #MC
+#process.GlobalTag.globaltag = cms.string("74X_mcRun2_asymptotic_v2")                                      #MC
 
 inputFilesAOD = cms.untracked.vstring(
     # AOD test files from /DYJetsToLL_M-50_13TeV-madgraph-pythia8/Phys14DR-PU20bx25_PHYS14_25_V1-v1/AODSIM
@@ -33,6 +33,7 @@ inputFilesAOD = cms.untracked.vstring(
 inputFilesMiniAOD = cms.untracked.vstring(
     # MiniAOD test files from /DYJetsToLL_M-50_13TeV-madgraph-pythia8/Phys14DR-PU20bx25_PHYS14_25_V1-v1/MINIAODSIM
     
+    '/store/data/Run2015D/SinglePhoton/MINIAOD/05Oct2015-v1/10000/006B6A67-B26F-E511-8341-002590593902.root'
     #'/store/data/Run2015D/SingleElectron/MINIAOD/PromptReco-v4/000/258/159/00000/0EC56452-186C-E511-8158-02163E0146D5.root'
     #'/store/data/Run2015D/SingleElectron/MINIAOD/05Oct2015-v1/10000/00991D45-4E6F-E511-932C-0025905A48F2.root'
     
@@ -43,10 +44,11 @@ inputFilesMiniAOD = cms.untracked.vstring(
     
     #'/store/mc/RunIISpring15MiniAODv2/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/50000/041705A6-6F6F-E511-AC9C-001E6757F1D4.root'
     #'/store/mc/RunIISpring15MiniAODv2/WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/40000/008865AA-596D-E511-92F1-0025905A6110.root'
+    #'/store/mc/RunIISpring15MiniAODv2/TT_TuneCUETP8M1_13TeV-powheg-pythia8/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/40000/00087FEB-236E-E511-9ACB-003048FF86CA.root'
     
     #'/store/mc/RunIISpring15MiniAODv2/ST_t-channel_antitop_4f_leptonDecays_13TeV-powheg-pythia8_TuneCUETP8M1/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/60000/306372CE-3E74-E511-9F2B-008CFA0A5684.root'
     #'/store/mc/RunIISpring15MiniAODv2/ST_t-channel_4f_leptonDecays_13TeV-amcatnlo-pythia8_TuneCUETP8M1/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/10000/06352EDB-CB71-E511-B04F-C4346BC7EDD8.root'
-    '/store/mc/RunIISpring15MiniAODv2/ST_tW_antitop_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/50000/044B267A-7D6F-E511-B43A-00221981B438.root'
+    #'/store/mc/RunIISpring15MiniAODv2/ST_tW_antitop_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/50000/044B267A-7D6F-E511-B43A-00221981B438.root'
     )
 
 #
@@ -94,9 +96,11 @@ process.ntupler = cms.EDAnalyzer('SimpleElectronNtupler',
                                  #
                                  # Common to all formats objects
                                  #
-                                 isMC     = cms.untracked.bool(True),
+                                 isMC     = cms.untracked.bool(False),
+				 isSIG    = cms.untracked.bool(False),
 				 isNLO    = cms.untracked.bool(False),
 				 trigger  = cms.InputTag("TriggerResults::HLT"),
+				 prescale = cms.InputTag("patTrigger"),
 				 #pileup   = cms.InputTag("addPileupInfo"),
                                  pileup   = cms.InputTag("slimmedAddPileupInfo"),
 				 rho      = cms.InputTag("fixedGridRhoFastjetAll"),
@@ -113,6 +117,7 @@ process.ntupler = cms.EDAnalyzer('SimpleElectronNtupler',
                                  #
                                  muonsMiniAOD    = cms.InputTag("slimmedMuons"),
 				 electronsMiniAOD    = cms.InputTag("slimmedElectrons"),
+				 metsMiniAOD         = cms.InputTag("slimmedMETs"),
                                  genParticlesMiniAOD = cms.InputTag("prunedGenParticles"),
                                  verticesMiniAOD     = cms.InputTag("offlineSlimmedPrimaryVertices"),
                                  conversionsMiniAOD  = cms.InputTag('reducedEgamma:reducedConversions'),
@@ -141,10 +146,10 @@ process.primaryVertexFilter  = cms.EDFilter("VertexSelector",
       )
 
 process.TFileService = cms.Service("TFileService",
-                                   fileName = cms.string('ST_tW_top_5f.root')
-				   #fileName = cms.string('SingleElectron_Run2015D_v4.root')
+                                   #fileName = cms.string('crosscheck.root')
+				   fileName = cms.string('SinglePhoton_Run2015D_v3_miniAODv2.root')
                                    )
 
 
 process.p = cms.Path(process.egmGsfElectronIDSequence * process.primaryVertexFilter * process.ntupler)
-#process.p = cms.Path(process.ntupler)
+#process.p = cms.Path(process.egmGsfElectronIDSequence * process.ntupler)

@@ -78,6 +78,7 @@ Implementation:
 
 #include "DataFormats/PatCandidates/interface/Muon.h"
 #include "PhysicsTools/Utilities/interface/LumiReWeighting.h"
+#include "DataFormats/PatCandidates/interface/MET.h"
 
 //#include "/afs/cern.ch/work/r/rchawla/private/Analysis_ee_13TeV/CMSSW_7_4_15/src/EgammaWork/ElectronNtupler/plugins/utils.h"
 
@@ -118,6 +119,7 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     edm::EDGetTokenT<edm::View<PileupSummaryInfo> > pileupToken_;
     edm::EDGetTokenT<double> rhoToken_;
     edm::EDGetTokenT<reco::BeamSpot> beamSpotToken_;
+    edm::EDGetTokenT<pat::METCollection> metToken_;
 
     // AOD case data members
     edm::EDGetToken electronsToken_;
@@ -185,6 +187,14 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     std::string string_emu_12_17;
     std::string string_emu_23_8;
 
+    std::string string_photon30;
+    std::string string_photon36;
+    std::string string_photon50;
+    std::string string_photon75;
+    std::string string_photon90;
+    std::string string_photon120;
+    std::string string_photon175;
+
     // Triggers for Fake-Rate method
     std::regex Photon_30;
     std::regex Photon_36;
@@ -210,12 +220,28 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     std::vector<std::string> double_emu_12_17_triggers_in_run;
     std::vector<std::string> double_emu_23_8_triggers_in_run;
 
+    std::vector<std::string> single_photon_30_triggers_in_run;
+    std::vector<std::string> single_photon_36_triggers_in_run;
+    std::vector<std::string> single_photon_50_triggers_in_run;
+    std::vector<std::string> single_photon_75_triggers_in_run;
+    std::vector<std::string> single_photon_90_triggers_in_run;
+    std::vector<std::string> single_photon_120_triggers_in_run;
+    std::vector<std::string> single_photon_175_triggers_in_run;
+
     bool singleEle;
     bool singleMuon;
     bool doubleElectron;
     bool doubleEMu_17_8;
     bool doubleEMu_12_17;
     bool doubleEMu_23_8;
+    
+    bool singlePhoton_30;
+    bool singlePhoton_36;
+    bool singlePhoton_50;
+    bool singlePhoton_75;
+    bool singlePhoton_90;
+    bool singlePhoton_120;
+    bool singlePhoton_175;
 
     std::vector<int> idx_singleEle;
     std::vector<int> idx_singleMuon;
@@ -223,6 +249,14 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     std::vector<int> idx_doubleEMu_17_8;
     std::vector<int> idx_doubleEMu_12_17;
     std::vector<int> idx_doubleEMu_23_8;
+
+    std::vector<int> idx_singlePhoton_30;
+    std::vector<int> idx_singlePhoton_36;
+    std::vector<int> idx_singlePhoton_50;
+    std::vector<int> idx_singlePhoton_75;
+    std::vector<int> idx_singlePhoton_90;
+    std::vector<int> idx_singlePhoton_120;
+    std::vector<int> idx_singlePhoton_175;
 
     // tau variables
     Int_t tauFlag;
@@ -340,6 +374,10 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     std::vector<double> isoPFMuon_;
     std::vector<double> isoTrkMuon_;
 
+    std::vector<double> metPt_;
+    std::vector<double> metPhi_;
+    std::vector<double> metSumEt_;
+
     double DeltaR(const pat::Electron& e, std::vector<pat::TriggerObjectStandAlone> object);
 };
 
@@ -446,6 +484,10 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
     (iConfig.getParameter<edm::InputTag>
      ("conversionsMiniAOD"));
 
+  metToken_ = mayConsume<pat::METCollection>
+    (iConfig.getParameter<edm::InputTag>
+     ("metsMiniAOD"));
+
   //
   // Set up the ntuple structure
   //
@@ -481,6 +523,14 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronTree_->Branch("prescalePhoton_120", &prescalePhoton_120);
   electronTree_->Branch("prescalePhoton_175", &prescalePhoton_175);
 
+  electronTree_->Branch("singlePhoton_30", &singlePhoton_30);
+  electronTree_->Branch("singlePhoton_36", &singlePhoton_36);
+  electronTree_->Branch("singlePhoton_50", &singlePhoton_50);
+  electronTree_->Branch("singlePhoton_75", &singlePhoton_75);
+  electronTree_->Branch("singlePhoton_90", &singlePhoton_90);
+  electronTree_->Branch("singlePhoton_120", &singlePhoton_120);
+  electronTree_->Branch("singlePhoton_175", &singlePhoton_175);
+
   electronTree_->Branch("pt_leg1"    ,  &pt_leg1    );
   electronTree_->Branch("eta_leg1"   ,  &eta_leg1   );
   electronTree_->Branch("phi_leg1"   ,  &phi_leg1   );
@@ -506,7 +556,7 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronTree_->Branch("gen_preFSR_eta"    ,  &gen_preFSR_eta_    );
   electronTree_->Branch("gen_preFSR_rap"    ,  &gen_preFSR_rap_    );
   electronTree_->Branch("gen_preFSR_phi"    ,  &gen_preFSR_phi_    );
-  
+
   electronTree_->Branch("gen_postFSR_ene"    ,  &gen_postFSR_ene_    );
   electronTree_->Branch("gen_postFSR_px"    ,  &gen_postFSR_px_    );
   electronTree_->Branch("gen_postFSR_py"    ,  &gen_postFSR_py_    );
@@ -586,6 +636,10 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronTree_->Branch("isoPFMuon", &isoPFMuon_);
   electronTree_->Branch("isoTrkMuon", &isoTrkMuon_);
 
+  electronTree_->Branch("metPt", &metPt_);
+  electronTree_->Branch("metPhi", &metPhi_);
+  electronTree_->Branch("metSumEt", &metSumEt_);
+
 }
 
 
@@ -622,6 +676,16 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     }
     //cout<<"Weight: "<<theWeight<<endl;
   }
+
+  // MET
+  edm::Handle<pat::METCollection> metHandle;
+  iEvent.getByToken(metToken_, metHandle);
+  
+  const pat::MET &met = metHandle->front();
+  //std::cout<<"met pt: "<<met.pt()<< "   "<<"met phi: "<<"   "<<met.phi()<<"   "<<"met sum et: "<<met.sumEt()<<endl;
+  metPt_.push_back(met.pt());
+  metPhi_.push_back(met.phi());
+  metSumEt_.push_back(met.sumEt());
 
   // Get Triggers
   Handle<edm::TriggerResults> triggerHandle;
@@ -661,6 +725,9 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     //cout<<"Trigger:"<<trigName<<"   "<<"prescale:"<<triggerPrescales->getPrescaleForIndex(i)<<"   "<<(triggerHandle->accept(i) ? "PASS" : "fail (or not run)")<<endl;
   }
 
+  //if(prescalePhoton_30 != 1) cout<<"prescales photon 30: "<<prescalePhoton_30<<endl;
+  //cout<<"prescales photon: "<<prescalePhoton_30<<"   "<<prescalePhoton_36<<"   "<<prescalePhoton_50<<"   "<<prescalePhoton_75<<"   "<<prescalePhoton_90<<"   "<<prescalePhoton_120<<"   "<<prescalePhoton_175<<endl;
+  
   for (pat::TriggerObjectStandAlone obj : *triggerObjects) {
     obj.unpackPathNames(triggerNames);
     //cout<<"Trigger: "<<obj.unpackPathNames(triggerNames)<<endl;
@@ -701,12 +768,28 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     size_t found_emu_12_17 = hltname.find(string_emu_12_17);
     size_t found_emu_23_8 = hltname.find(string_emu_23_8);
 
+    size_t found_photon_30 = hltname.find(string_photon30);
+    size_t found_photon_36 = hltname.find(string_photon36);
+    size_t found_photon_50 = hltname.find(string_photon50);
+    size_t found_photon_75 = hltname.find(string_photon75);
+    size_t found_photon_90 = hltname.find(string_photon90);
+    size_t found_photon_120 = hltname.find(string_photon120);
+    size_t found_photon_175 = hltname.find(string_photon175);
+
     if(found_singleEle !=string::npos) single_electron_triggers_in_run.push_back(hltname);
     if(found_singleMuon !=string::npos) single_muon_triggers_in_run.push_back(hltname);
     if(found_doubleEle !=string::npos) double_electron_triggers_in_run.push_back(hltname);
     if(found_emu_17_8 !=string::npos) double_emu_17_8_triggers_in_run.push_back(hltname);
     if(found_emu_12_17 !=string::npos) double_emu_12_17_triggers_in_run.push_back(hltname);
     if(found_emu_23_8 !=string::npos) double_emu_23_8_triggers_in_run.push_back(hltname);
+
+    if(found_photon_30 !=string::npos) single_photon_30_triggers_in_run.push_back(hltname);
+    if(found_photon_36 !=string::npos) single_photon_36_triggers_in_run.push_back(hltname);
+    if(found_photon_50 !=string::npos) single_photon_50_triggers_in_run.push_back(hltname);
+    if(found_photon_75 !=string::npos) single_photon_75_triggers_in_run.push_back(hltname);
+    if(found_photon_90 !=string::npos) single_photon_90_triggers_in_run.push_back(hltname);
+    if(found_photon_120 !=string::npos) single_photon_120_triggers_in_run.push_back(hltname);
+    if(found_photon_175 !=string::npos) single_photon_175_triggers_in_run.push_back(hltname);
   }
 
   for ( int itrigger = 0 ; itrigger < (int)single_electron_triggers_in_run.size(); itrigger++){
@@ -757,6 +840,61 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       }
   }
 
+  for ( int itrigger = 0 ; itrigger < (int)single_photon_30_triggers_in_run.size(); itrigger++){
+    idx_singlePhoton_30.push_back(triggerNames.triggerIndex(single_photon_30_triggers_in_run[itrigger]));
+    if(idx_singlePhoton_30.size()>0)
+      if(idx_singlePhoton_30[itrigger] < hsize){
+	singlePhoton_30 = (triggerHandle->accept(idx_singlePhoton_30[itrigger]));
+      }
+  }
+
+  for ( int itrigger = 0 ; itrigger < (int)single_photon_36_triggers_in_run.size(); itrigger++){
+    idx_singlePhoton_36.push_back(triggerNames.triggerIndex(single_photon_36_triggers_in_run[itrigger]));
+    if(idx_singlePhoton_36.size()>0)
+      if(idx_singlePhoton_36[itrigger] < hsize){
+	singlePhoton_36 = (triggerHandle->accept(idx_singlePhoton_36[itrigger]));
+      }
+  }
+
+  for ( int itrigger = 0 ; itrigger < (int)single_photon_50_triggers_in_run.size(); itrigger++){
+    idx_singlePhoton_50.push_back(triggerNames.triggerIndex(single_photon_50_triggers_in_run[itrigger]));
+    if(idx_singlePhoton_50.size()>0)
+      if(idx_singlePhoton_50[itrigger] < hsize){
+	singlePhoton_50 = (triggerHandle->accept(idx_singlePhoton_50[itrigger]));
+      }
+  }
+
+  for ( int itrigger = 0 ; itrigger < (int)single_photon_75_triggers_in_run.size(); itrigger++){
+    idx_singlePhoton_75.push_back(triggerNames.triggerIndex(single_photon_75_triggers_in_run[itrigger]));
+    if(idx_singlePhoton_75.size()>0)
+      if(idx_singlePhoton_75[itrigger] < hsize){
+	singlePhoton_75 = (triggerHandle->accept(idx_singlePhoton_75[itrigger]));
+      }
+  }
+
+  for ( int itrigger = 0 ; itrigger < (int)single_photon_90_triggers_in_run.size(); itrigger++){
+    idx_singlePhoton_90.push_back(triggerNames.triggerIndex(single_photon_90_triggers_in_run[itrigger]));
+    if(idx_singlePhoton_90.size()>0)
+      if(idx_singlePhoton_90[itrigger] < hsize){
+	singlePhoton_90 = (triggerHandle->accept(idx_singlePhoton_90[itrigger]));
+      }
+  }
+
+  for ( int itrigger = 0 ; itrigger < (int)single_photon_120_triggers_in_run.size(); itrigger++){
+    idx_singlePhoton_120.push_back(triggerNames.triggerIndex(single_photon_120_triggers_in_run[itrigger]));
+    if(idx_singlePhoton_120.size()>0)
+      if(idx_singlePhoton_120[itrigger] < hsize){
+	singlePhoton_120 = (triggerHandle->accept(idx_singlePhoton_120[itrigger]));
+      }
+  }
+
+  for ( int itrigger = 0 ; itrigger < (int)single_photon_175_triggers_in_run.size(); itrigger++){
+    idx_singlePhoton_175.push_back(triggerNames.triggerIndex(single_photon_175_triggers_in_run[itrigger]));
+    if(idx_singlePhoton_175.size()>0)
+      if(idx_singlePhoton_175[itrigger] < hsize){
+	singlePhoton_175 = (triggerHandle->accept(idx_singlePhoton_175[itrigger]));
+      }
+  }
 
   // Get Pileup info
   Handle<edm::View<PileupSummaryInfo> > pileupHandle;
@@ -801,17 +939,40 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   if(misMC && misSIG){
     nGenElectrons_ = 0;
     tauFlag = 0;
-    SumPhotonMom = 0;
+    SumPhotonMom = 0.;
 
     for(size_t i = 0; i < genParticles->size(); ++i){
       const GenParticle &genlep = (*genParticles)[i];
-      
+
       int id = genlep.pdgId();
-      //const Candidate * Mother = genlep.mother();
 
       TLorentzVector fourmom;
       fourmom.SetPxPyPzE(genlep.px(), genlep.py(), genlep.pz(), genlep.energy());
       //TVector3 p = fourmom.Vect();
+
+      /*int n = genlep.numberOfDaughters();
+	if(fabs(id)==11){
+	for(int j = 0; j < n; ++j) {
+	const Candidate * d = genlep.daughter(j);
+	int dauId = d->pdgId();
+      //cout<<"ID: "<<id<<"   "<<"Daughter ID: "<<dauId<<endl;
+
+      if(fabs(dauId) == 22){
+      Double_t dR = deltaR(d->eta(), d->phi(), genlep.eta(), genlep.phi());
+      cout<<"dR: "<<dR<<"   "<<"ID: "<<id<<"   "<<"Daughter ID: "<<dauId<<endl;
+
+      // Sum of all photon's momentum near the post-FSR electron
+      if(dR<0.1)
+      {
+      SumPhotonMom = SumPhotonMom + fourmom.Momentum;
+      }
+      }
+      }
+      }*/
+
+      //const Candidate * Mother = genlep.mother(i);
+      //int momId = Mother->pdgId();
+      //cout<<"Mother  ID:"<<momId<<endl;
 
       if(fabs(id)==11 && genlep.fromHardProcessFinalState()==1){ // post FSR
 	gen_postFSR_ene_.push_back(genlep.energy());
@@ -852,7 +1013,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	gen_preFSR_rap_.push_back(genlep.rapidity());
 	gen_preFSR_phi_.push_back(genlep.phi());
 
-	}
+      }
 
       // Separating the taus coming from Z decay
       if(abs(id)==15 && genlep.fromHardProcessDecayed()==1){
@@ -871,6 +1032,8 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     }
 
   }
+
+  //cout<<"gen post FSR: "<<gen_postFSR_pt_.size()<<endl;
 
   //cout<<"2"<<endl;
 
@@ -1090,12 +1253,28 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   double_emu_12_17_triggers_in_run.clear();
   double_emu_23_8_triggers_in_run.clear();
 
+  single_photon_30_triggers_in_run.clear();
+  single_photon_36_triggers_in_run.clear();
+  single_photon_50_triggers_in_run.clear();
+  single_photon_75_triggers_in_run.clear();
+  single_photon_90_triggers_in_run.clear();
+  single_photon_120_triggers_in_run.clear();
+  single_photon_175_triggers_in_run.clear();
+
   idx_singleEle.clear();
   idx_singleMuon.clear();
   idx_doubleElectron.clear();
   idx_doubleEMu_17_8.clear();
   idx_doubleEMu_12_17.clear();
   idx_doubleEMu_23_8.clear();
+
+  idx_singlePhoton_30.clear();
+  idx_singlePhoton_36.clear();
+  idx_singlePhoton_50.clear();
+  idx_singlePhoton_75.clear();
+  idx_singlePhoton_90.clear();
+  idx_singlePhoton_120.clear();
+  idx_singlePhoton_175.clear();
 
   // Clear vectors
   pt_leg1.clear();
@@ -1203,152 +1382,156 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   isoPFMuon_.clear();
   isoTrkMuon_.clear();
 
-}
-// ------------ method called once each job just before starting event loop  ------------
+  metPt_.clear();
+  metPhi_.clear();
+  metSumEt_.clear();
+
+  }
+  // ------------ method called once each job just before starting event loop  ------------
   void 
-SimpleElectronNtupler::beginJob()
-{
-}
-
-// ------------ method called once each job just after ending the event loop  ------------
-  void 
-SimpleElectronNtupler::endJob() 
-{
-}
-
-// ------------ method called when starting to processes a run  ------------
-/*
-   void 
-   SimpleElectronNtupler::beginRun(edm::Run const&, edm::EventSetup const&)
-   {
-   }
-   */
-
-// ------------ method called when ending the processing of a run  ------------
-/*
-   void 
-   SimpleElectronNtupler::endRun(edm::Run const&, edm::EventSetup const&)
-   {
-   }
-   */
-
-// ------------ method called when starting to processes a luminosity block  ------------
-/*
-   void 
-   SimpleElectronNtupler::beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
-   {
-   }
-   */
-
-// ------------ method called when ending the processing of a luminosity block  ------------
-/*
-   void 
-   SimpleElectronNtupler::endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
-   {
-   }
-   */
-
-Double_t SimpleElectronNtupler::deltaPhi(Double_t phi1, Double_t phi2)
-{
-  Double_t pi = 3.1415927;
-  Double_t dphi = fabs(phi1 - phi2);
-  if(dphi >= pi) dphi = 2. * pi - dphi;
-  return dphi;
-}
-
-Double_t SimpleElectronNtupler::deltaEta(Double_t eta1, Double_t eta2)
-{
-  Double_t deta = fabs(eta1 - eta2);
-  return deta;
-}
-
-Double_t SimpleElectronNtupler::deltaR(Double_t eta1, Double_t phi1, Double_t eta2, Double_t phi2)
-{
-  Double_t deta = deltaEta(eta1, eta2);
-  Double_t dphi = deltaPhi(phi1, phi2);
-  Double_t dr = sqrt(deta*deta + dphi*dphi);
-  return dr;
-}
-
-// ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
-void
-SimpleElectronNtupler::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
-  //The following says we do not know what parameters are allowed so do no validation
-  // Please change this to state exactly what you do use, even if it is no parameters
-  edm::ParameterSetDescription desc;
-  desc.setUnknown();
-  descriptions.addDefault(desc);
-}
-
-int SimpleElectronNtupler::matchToTruth(const edm::Ptr<reco::GsfElectron> el, 
-    const edm::Handle<edm::View<reco::GenParticle>> &prunedGenParticles){
-
-  // 
-  // Explicit loop and geometric matching method (advised by Josh Bendavid)
-  //
-
-  // Find the closest status 1 gen electron to the reco electron
-  double dR = 999;
-  const reco::Candidate *closestElectron = 0;
-  for(size_t i=0; i<prunedGenParticles->size();i++){
-    const reco::Candidate *particle = &(*prunedGenParticles)[i];
-    // Drop everything that is not electron or not status 1
-    if( abs(particle->pdgId()) != 11 || particle->status() != 1 )
-      continue;
-    //
-    double dRtmp = ROOT::Math::VectorUtil::DeltaR( el->p4(), particle->p4() );
-    if( dRtmp < dR ){
-      dR = dRtmp;
-      closestElectron = particle;
+    SimpleElectronNtupler::beginJob()
+    {
     }
+
+  // ------------ method called once each job just after ending the event loop  ------------
+  void 
+    SimpleElectronNtupler::endJob() 
+    {
+    }
+
+  // ------------ method called when starting to processes a run  ------------
+  /*
+     void 
+     SimpleElectronNtupler::beginRun(edm::Run const&, edm::EventSetup const&)
+     {
+     }
+     */
+
+  // ------------ method called when ending the processing of a run  ------------
+  /*
+     void 
+     SimpleElectronNtupler::endRun(edm::Run const&, edm::EventSetup const&)
+     {
+     }
+     */
+
+  // ------------ method called when starting to processes a luminosity block  ------------
+  /*
+     void 
+     SimpleElectronNtupler::beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
+     {
+     }
+     */
+
+  // ------------ method called when ending the processing of a luminosity block  ------------
+  /*
+     void 
+     SimpleElectronNtupler::endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
+     {
+     }
+     */
+
+  Double_t SimpleElectronNtupler::deltaPhi(Double_t phi1, Double_t phi2)
+  {
+    Double_t pi = 3.1415927;
+    Double_t dphi = fabs(phi1 - phi2);
+    if(dphi >= pi) dphi = 2. * pi - dphi;
+    return dphi;
   }
-  // See if the closest electron (if it exists) is close enough.
-  // If not, no match found.
-  if( !(closestElectron != 0 && dR < 0.1) ) {
-    return UNMATCHED;
+
+  Double_t SimpleElectronNtupler::deltaEta(Double_t eta1, Double_t eta2)
+  {
+    Double_t deta = fabs(eta1 - eta2);
+    return deta;
   }
 
-  // 
-  int ancestorPID = -999; 
-  int ancestorStatus = -999;
-  findFirstNonElectronMother(closestElectron, ancestorPID, ancestorStatus);
-
-  if( ancestorPID == -999 && ancestorStatus == -999 ){
-    // No non-electron parent??? This should never happen.
-    // Complain.
-    printf("SimpleElectronNtupler: ERROR! Electron does not apper to have a non-electron parent\n");
-    return UNMATCHED;
+  Double_t SimpleElectronNtupler::deltaR(Double_t eta1, Double_t phi1, Double_t eta2, Double_t phi2)
+  {
+    Double_t deta = deltaEta(eta1, eta2);
+    Double_t dphi = deltaPhi(phi1, phi2);
+    Double_t dr = sqrt(deta*deta + dphi*dphi);
+    return dr;
   }
 
-  if( abs(ancestorPID) > 50 && ancestorStatus == 2 )
-    return TRUE_NON_PROMPT_ELECTRON;
+  // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
+  void
+    SimpleElectronNtupler::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+      //The following says we do not know what parameters are allowed so do no validation
+      // Please change this to state exactly what you do use, even if it is no parameters
+      edm::ParameterSetDescription desc;
+      desc.setUnknown();
+      descriptions.addDefault(desc);
+    }
 
-  if( abs(ancestorPID) == 15 && ancestorStatus == 2 )
-    return TRUE_ELECTRON_FROM_TAU;
+  int SimpleElectronNtupler::matchToTruth(const edm::Ptr<reco::GsfElectron> el, 
+      const edm::Handle<edm::View<reco::GenParticle>> &prunedGenParticles){
 
-  // What remains is true prompt electrons
-  return TRUE_PROMPT_ELECTRON;
-}
+    // 
+    // Explicit loop and geometric matching method (advised by Josh Bendavid)
+    //
 
-void SimpleElectronNtupler::findFirstNonElectronMother(const reco::Candidate *particle,
-    int &ancestorPID, int &ancestorStatus){
+    // Find the closest status 1 gen electron to the reco electron
+    double dR = 999;
+    const reco::Candidate *closestElectron = 0;
+    for(size_t i=0; i<prunedGenParticles->size();i++){
+      const reco::Candidate *particle = &(*prunedGenParticles)[i];
+      // Drop everything that is not electron or not status 1
+      if( abs(particle->pdgId()) != 11 || particle->status() != 1 )
+	continue;
+      //
+      double dRtmp = ROOT::Math::VectorUtil::DeltaR( el->p4(), particle->p4() );
+      if( dRtmp < dR ){
+	dR = dRtmp;
+	closestElectron = particle;
+      }
+    }
+    // See if the closest electron (if it exists) is close enough.
+    // If not, no match found.
+    if( !(closestElectron != 0 && dR < 0.1) ) {
+      return UNMATCHED;
+    }
 
-  if( particle == 0 ){
-    printf("SimpleElectronNtupler: ERROR! null candidate pointer, this should never happen\n");
+    // 
+    int ancestorPID = -999; 
+    int ancestorStatus = -999;
+    findFirstNonElectronMother(closestElectron, ancestorPID, ancestorStatus);
+
+    if( ancestorPID == -999 && ancestorStatus == -999 ){
+      // No non-electron parent??? This should never happen.
+      // Complain.
+      printf("SimpleElectronNtupler: ERROR! Electron does not apper to have a non-electron parent\n");
+      return UNMATCHED;
+    }
+
+    if( abs(ancestorPID) > 50 && ancestorStatus == 2 )
+      return TRUE_NON_PROMPT_ELECTRON;
+
+    if( abs(ancestorPID) == 15 && ancestorStatus == 2 )
+      return TRUE_ELECTRON_FROM_TAU;
+
+    // What remains is true prompt electrons
+    return TRUE_PROMPT_ELECTRON;
+  }
+
+  void SimpleElectronNtupler::findFirstNonElectronMother(const reco::Candidate *particle,
+      int &ancestorPID, int &ancestorStatus){
+
+    if( particle == 0 ){
+      printf("SimpleElectronNtupler: ERROR! null candidate pointer, this should never happen\n");
+      return;
+    }
+
+    // Is this the first non-electron parent? If yes, return, otherwise
+    // go deeper into recursion
+    if( abs(particle->pdgId()) == 11 ){
+      findFirstNonElectronMother(particle->mother(0), ancestorPID, ancestorStatus);
+    }else{
+      ancestorPID = particle->pdgId();
+      ancestorStatus = particle->status();
+    }
+
     return;
   }
 
-  // Is this the first non-electron parent? If yes, return, otherwise
-  // go deeper into recursion
-  if( abs(particle->pdgId()) == 11 ){
-    findFirstNonElectronMother(particle->mother(0), ancestorPID, ancestorStatus);
-  }else{
-    ancestorPID = particle->pdgId();
-    ancestorStatus = particle->status();
-  }
-
-  return;
-}
-
-//define this as a plug-in
-DEFINE_FWK_MODULE(SimpleElectronNtupler);
+  //define this as a plug-in
+  DEFINE_FWK_MODULE(SimpleElectronNtupler);
