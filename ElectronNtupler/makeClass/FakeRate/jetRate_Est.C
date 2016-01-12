@@ -42,7 +42,7 @@ void jetRate_Est::Loop()
   if (fChain == 0) return;
 
   //Long64_t nentries = fChain->GetEntriesFast();
-  Long64_t nentries = 5000;
+  Long64_t nentries = 500;
   cout<<"entries: "<<nentries<<endl;
 
   Long64_t nbytes = 0, nb = 0;
@@ -61,18 +61,25 @@ void jetRate_Est::Loop()
     TMath::Sort(size1,ptnew,index,true);
 
     count = 0;
+    passID = false; passECAL = false;
     newelePt.clear(); neweleEta.clear(); newelePassMedium.clear(); newelePassECAL.clear();
 
     //if(!singlePhoton_175) continue;
     if(metPt->at(0) > 10.) continue;
 
+    cout<<"Electrons: "<<nEle<<endl;
+    
     for(int j=0;j<nEle;j++){
 
       passID = passMediumId->at(index[j]);
       passECAL = eleEcalDrivenSeed->at(index[j]);
+      cout<<"passID: "<<passID<<"   "<<"passECAL: "<<passECAL<<endl;
       if(passID && passECAL) count++;
+      cout<<"count: "<<count<<endl;
 
     } //nEle
+
+    cout<<"   "<<endl;
 
     if(count <= 1){
       for(int k=0;k<nEle;k++){
