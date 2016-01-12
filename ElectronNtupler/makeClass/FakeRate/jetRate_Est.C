@@ -11,37 +11,38 @@ void jetRate_Est::Loop()
 {
   TFile *file = new TFile("single_photon.root", "recreate");
 
-  int isNum, isDen;
+  int count;
+  bool passID, passECAL;
 
-  vector <double> newscEt;
-  vector <double> newscEta;
-  vector <double> newscPhi;
-  vector <double> newscEnr;
+  int isNum_BRL, isDen_BRL;
+  int isNum_ECAP1, isDen_ECAP1;
+  int isNum_ECAP2, isDen_ECAP2;
 
   vector <double> newelePt;
   vector <double> neweleEta;
-  vector <double> neweleEnr;
-  vector <double> newelePhi;
-  vector <double> neweleCharge;
+  vector <double> newelePassMedium;
+  vector <double> newelePassECAL;
 
-  Double_t xbins[46] = {15,20,25,30,35,40,45,50,55,60,64,68,72,76,81,86,91,96,101,106,110,115,120,126,133,141,150,160,171,185,200,220,243,273,320,380,440,510,600,700,830,1000,1200,1500,2000,3000};
+  TH1F *numPt_BRL = new TH1F("numPt_BRL", "numPt_BRL", 100, 0, 500);
+  TH1F *numPt_ECAP1 = new TH1F("numPt_ECAP1", "numPt_ECAP1", 100, 0, 500);
+  TH1F *numPt_ECAP2 = new TH1F("numPt_ECAP2 ", "numPt_ECAP2 ", 100, 0, 500);
 
-  TH1F *numPt = new TH1F("numPt", "numPt", 100, 0, 500);
-  TH1F *denPt = new TH1F("denPt", "denPt", 100, 0, 500);
+  TH1F *denPt_BRL = new TH1F("denPt_BRL", "denPt_BRL", 100, 0, 500);
+  TH1F *denPt_ECAP1 = new TH1F("denPt_ECAP1", "denPt_ECAP1", 100, 0, 500);
+  TH1F *denPt_ECAP2  = new TH1F("denPt_ECAP2 ", "denPt_ECAP2 ", 100, 0, 500);
 
-  TH1F *eleEta = new TH1F("eleEta", "eleEta", 50, -2.5, 2.5);
-  TH1F *elePhi = new TH1F("elePhi", "elePhi", 50, -3.5, 3.5);
+  numPt_BRL->Sumw2(); denPt_BRL->Sumw2();
+  numPt_ECAP1->Sumw2(); denPt_ECAP1->Sumw2();
+  numPt_ECAP2->Sumw2(); denPt_ECAP2->Sumw2();
 
-  numPt->Sumw2(); denPt->Sumw2();
-  eleEta->Sumw2(); elePhi->Sumw2();
-
-  isNum = 0;
-  isDen = 0;
+  isNum_BRL = 0; isDen_BRL = 0;
+  isNum_ECAP1 = 0; isDen_ECAP1 = 0;
+  isNum_ECAP2 = 0; isDen_ECAP2 = 0;
 
   if (fChain == 0) return;
 
-  Long64_t nentries = fChain->GetEntriesFast();
-  //Long64_t nentries = 500;
+  //Long64_t nentries = fChain->GetEntriesFast();
+  Long64_t nentries = 5000;
   cout<<"entries: "<<nentries<<endl;
 
   Long64_t nbytes = 0, nb = 0;
@@ -59,48 +60,81 @@ void jetRate_Est::Loop()
     int size1 = sizeof(ptnew)/sizeof(ptnew[0]);
     TMath::Sort(size1,ptnew,index,true);
 
-    newscEt.clear(); newscEta.clear(); newscPhi.clear(); newscEnr.clear();
-    newelePt.clear(); neweleEta.clear(); neweleEnr.clear(); newelePhi.clear(); neweleCharge.clear();
+    count = 0;
+    newelePt.clear(); neweleEta.clear(); newelePassMedium.clear(); newelePassECAL.clear();
 
-    for(int k=0;k<nEle;k++){
+    //if(!singlePhoton_175) continue;
+    if(metPt->at(0) > 10.) continue;
 
-      if(nEle <=1 ){
-	if(metPt->at(0) < 10.){
-	  if(expectedMissingInnerHits->at(index[k]) == 0){
+    for(int j=0;j<nEle;j++){
 
-	    isDen++;
+      passID = passMediumId->at(index[j]);
+      passECAL = eleEcalDrivenSeed->at(index[j]);
+      if(passID && passECAL) count++;
+
+    } //nEle
+
+    if(count <= 1){
+      for(int k=0;k<nEle;k++){
+
+	if(expectedMissingInnerHits->at(index[k]) == 0){
+	  if(fabs(eta->at(index[k])) < 2.5){
 
 	    newelePt.push_back(pt->at(index[k]));
 	    neweleEta.push_back(eta->at(index[k]));
-	    neweleEnr.push_back(energy->at(index[k]));
-	    newelePhi.push_back(phi->at(index[k]));
-	    neweleCharge.push_back(charge->at(index[k]));
+	    newelePassMedium.push_back(passMediumId->at(index[k]));
+	    newelePassECAL.push_back(eleEcalDrivenSeed->at(index[k]));
 
-	    denPt->Fill(pt->at(index[k]));
+	  } // eta
+	} // missing hits
+      } // nEle
+    } // count
+
+    // // event
+
+    for(unsigned int l=0;l<newelePt.size();l++){
+      if(fabs(neweleEta.at(l)) < 1.4442){
+	isDen_BRL++;
+	denPt_BRL->Fill(newelePt.at(l));
+      }
+
+      if(fabs(neweleEta.at(l)) > 1.566 && fabs(neweleEta.at(l)) < 2.0){
+	isDen_ECAP1++;
+	denPt_ECAP1->Fill(newelePt.at(l));
+      }
+
+      if(fabs(neweleEta.at(l)) > 2.0 && fabs(neweleEta.at(l)) < 2.5){
+	isDen_ECAP2++;
+	denPt_ECAP2->Fill(newelePt.at(l));
+      }
+
+      if(newelePassMedium.at(l) == 1 && newelePassECAL.at(l) == 1){
+	if(newelePt.at(l) > 20.){
+
+	  if(fabs(neweleEta.at(l)) < 1.4442){
+	    isNum_BRL++;
+	    numPt_BRL->Fill(newelePt.at(l));
 	  }
-	}
-      }
-    }
 
-    //cout<<"pt size: "<<newelePt.size()<<endl;
-    //cout<<"Den: "<<isDen<<endl;
-    //isDen = isDen + newelePt.size();
-    
-    for(unsigned int m=0;m<newelePt.size();m++){
+	  if(fabs(neweleEta.at(l)) > 1.566 && fabs(neweleEta.at(l)) < 2.0){
+	    isNum_ECAP1++;
+	    numPt_ECAP1->Fill(newelePt.at(l));
+	  }
 
-      if(passMediumId->at(index[m]) == 1 && eleEcalDrivenSeed->at(index[m]) == 1){
-	if(newelePt.at(m) > 20.){
+	  if(fabs(neweleEta.at(l)) > 2.0 && fabs(neweleEta.at(l)) < 2.5){
+	    isNum_ECAP2++;
+	    numPt_ECAP2->Fill(newelePt.at(l));
+	  }
 
-	  //cout<<"Num: "<<isNum<<endl;
-	  isNum++;
-	  numPt->Fill(newelePt.at(m));
-	}
-      }
-    }
+	} // pt
+      } // pass Medium & ECAL driven
+    } // l
 
   } // event
 
-  cout<<"Numerator: "<<isNum<<"   "<<"Denominator: "<<isDen<<endl;
+  cout<<"Numerator Barrel: "<<isNum_BRL<<"   "<<"Denominator Barrel: "<<isDen_BRL<<endl;
+  cout<<"Numerator Endcap 1: "<<isNum_ECAP1<<"   "<<"Denominator Endcap 1: "<<isDen_ECAP1<<endl;
+  cout<<"Numerator Endcap 2: "<<isNum_ECAP2<<"   "<<"Denominator Endcap 2: "<<isDen_ECAP2<<endl;
 
   file->Write();
   file->Close();
