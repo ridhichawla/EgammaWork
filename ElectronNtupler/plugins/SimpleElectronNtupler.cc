@@ -22,6 +22,10 @@ Implementation:
 #include <vector>
 #include <regex>
 
+#ifdef __CINT__
+#pragma link C++ class std::vector<TLorentzVector>+;
+#endif
+
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/EDAnalyzer.h"
@@ -54,6 +58,7 @@ Implementation:
 #include "TLorentzVector.h"
 #include "TParticle.h"
 #include "Math/VectorUtil.h"
+#include "TClonesArray.h"
 
 #include "RecoEgamma/EgammaTools/interface/EffectiveAreas.h"
 #include "DataFormats/Common/interface/RefToPtr.h"
@@ -268,9 +273,13 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     Int_t nElectrons_;
     Int_t nGenElectrons_;
 
-    TLorentzVector gen_preFSR;
+    TClonesArray *gen_preFSR = new TClonesArray("TLorentzVector");
+    TClonesArray &arr = *gen_preFSR;
+
+    //std::vector<TLorentzVector> gen_preFSR;
+
+    TLorentzVector preFSR;
     TLorentzVector SumPhotonMom;
-    //TLorentzVector SumElectronMom;
 
     std::vector<Float_t> gen_preFSR_ene_;
     std::vector<Float_t> gen_preFSR_px_;
@@ -393,6 +402,8 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   //mvaValuesMapToken_(consumes<edm::ValueMap<float> >(iConfig.getParameter<edm::InputTag>("mvaValuesMap"))),
   //mvaCategoriesMapToken_(consumes<edm::ValueMap<int> >(iConfig.getParameter<edm::InputTag>("mvaCategoriesMap")))
 {
+  //gen_preFSR = new TClonesArray("TLorentzVector");
+  
   nevents_ = fs->make<TH1F>("nevents_","nevents_",2,0,2);
   string_singleEle      = "HLT_Ele23_WPLoose_Gsf_v";
   string_singleMuon     = "HLT_IsoMu20_v";
@@ -409,6 +420,14 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   Photon_90  = "(HLT_Photon90_v)(.*)";
   Photon_120 = "(HLT_Photon120_v)(.*)";
   Photon_175 = "(HLT_Photon175_v)(.*)";
+
+  string_photon30 = "HLT_Photon30_v";
+  string_photon36 = "HLT_Photon36_v";
+  string_photon50 = "HLT_Photon50_v";
+  string_photon75 = "HLT_Photon75_v";
+  string_photon90 = "HLT_Photon90_v";
+  string_photon120 = "HLT_Photon120_v";
+  string_photon175 = "HLT_Photon175_v";
 
   misMC            = iConfig.getUntrackedParameter<bool>("isMC");
   misSIG           = iConfig.getUntrackedParameter<bool>("isSIG");
@@ -551,6 +570,8 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
 
   electronTree_->Branch("nEle"    ,  &nElectrons_ , "nEle/I");
   electronTree_->Branch("nGenEle"    ,  &nGenElectrons_ , "nGenEle/I");
+  electronTree_->Branch("gen_preFSR"    ,  &gen_preFSR    );
+  
   electronTree_->Branch("gen_preFSR_ene"    ,  &gen_preFSR_ene_    );
   electronTree_->Branch("gen_preFSR_px"    ,  &gen_preFSR_px_    );
   electronTree_->Branch("gen_preFSR_py"    ,  &gen_preFSR_py_    );
@@ -728,9 +749,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     //cout<<"Trigger:"<<trigName<<"   "<<"prescale:"<<triggerPrescales->getPrescaleForIndex(i)<<"   "<<(triggerHandle->accept(i) ? "PASS" : "fail (or not run)")<<endl;
   }
 
-  //if(prescalePhoton_30 != 1) cout<<"prescales photon 30: "<<prescalePhoton_30<<endl;
-  //cout<<"prescales photon: "<<prescalePhoton_30<<"   "<<prescalePhoton_36<<"   "<<prescalePhoton_50<<"   "<<prescalePhoton_75<<"   "<<prescalePhoton_90<<"   "<<prescalePhoton_120<<"   "<<prescalePhoton_175<<endl;
-  
   for (pat::TriggerObjectStandAlone obj : *triggerObjects) {
     obj.unpackPathNames(triggerNames);
     //cout<<"Trigger: "<<obj.unpackPathNames(triggerNames)<<endl;
@@ -954,8 +972,8 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       if(fabs(id)==11){
 	SumPhotonMom.SetPxPyPzE(0., 0., 0., 0.);
 	
-	gen_preFSR.SetPxPyPzE(genlep.px(), genlep.py(), genlep.pz(), genlep.energy());
-	cout<<"gen pre FSR pt before addition: "<<gen_preFSR.Pt()<<endl;
+	preFSR.SetPxPyPzE(genlep.px(), genlep.py(), genlep.pz(), genlep.energy());
+	//cout<<"pre FSR pt before addition: "<<preFSR.Pt()<<endl;
 
 	for(int j = 0; j < n; ++j) {
 	  const Candidate * daughter = genlep.daughter(j);
@@ -963,25 +981,30 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
 	  if(fabs(dauId) == 22){
 	    Double_t dR = deltaR(daughter->eta(), daughter->phi(), genlep.eta(), genlep.phi());
-	    cout<<"***********************************************************"<<endl;
-	    cout<<"dR: "<<dR<<"   "<<"ID: "<<genlep.pdgId()<<"   "<<"Daughter ID: "<<dauId<<endl;
+	    //cout<<"***********************************************************"<<endl;
+	    //cout<<"dR: "<<dR<<"   "<<"ID: "<<genlep.pdgId()<<"   "<<"Daughter ID: "<<dauId<<endl;
 
 	    // Sum of all photon's momentum near the post-FSR electron
 	    if(dR<0.1)
 	    {
 	      fourmom.SetPxPyPzE(daughter->px(), daughter->py(), daughter->pz(), daughter->energy());
 	      SumPhotonMom = SumPhotonMom + fourmom;
-	      cout<<"SumPhoton pt: "<<SumPhotonMom.Pt()<<endl;
+	      //cout<<"SumPhoton pt: "<<SumPhotonMom.Pt()<<endl;
 	    }
 	  }
 	}
 
-	gen_preFSR = gen_preFSR + SumPhotonMom;
-	cout<<"gen pre FSR pt after addition: "<<gen_preFSR.Pt()<<endl;
+	preFSR = preFSR + SumPhotonMom;
+	//cout<<"pre FSR pt after addition: "<<preFSR.Pt()<<endl;
 
       }
 
+      new(arr[i]) TLorentzVector(preFSR);
+      //gen_preFSR.push_back(preFSR);
+
       if(fabs(id)==11 && genlep.fromHardProcessFinalState()==1){ // post FSR
+	//cout<<"gen post FSR pt: "<<genlep.pt()<<endl;
+	
 	gen_postFSR_ene_.push_back(genlep.energy());
 	gen_postFSR_px_.push_back(genlep.px());
 	gen_postFSR_py_.push_back(genlep.py());
@@ -1025,7 +1048,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   }
 
-  cout<<"   "<<endl;
+  //cout<<"   "<<endl;
 
   //cout<<"2"<<endl;
 
@@ -1285,6 +1308,9 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     gen_etaTau_.clear();
     gen_phiTau_.clear();
 
+    gen_preFSR->Clear();
+    //gen_preFSR.clear();
+    
     gen_preFSR_ene_.clear();
     gen_preFSR_pt_.clear();
     gen_preFSR_px_.clear();
