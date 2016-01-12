@@ -67,19 +67,20 @@ void jetRate_Est::Loop()
     //if(!singlePhoton_175) continue;
     if(metPt->at(0) > 10.) continue;
 
-    cout<<"Electrons: "<<nEle<<endl;
+    //cout<<"Electrons: "<<nEle<<endl;
     
     for(int j=0;j<nEle;j++){
 
       passID = passMediumId->at(index[j]);
       passECAL = eleEcalDrivenSeed->at(index[j]);
-      cout<<"passID: "<<passID<<"   "<<"passECAL: "<<passECAL<<endl;
+      //cout<<"passID: "<<passID<<"   "<<"passECAL: "<<passECAL<<endl;
+      
       if(passID && passECAL) count++;
-      cout<<"count: "<<count<<endl;
+      //cout<<"count: "<<count<<endl;
 
     } //nEle
 
-    cout<<"   "<<endl;
+    //cout<<"   "<<endl;
 
     if(count <= 1){
       for(int k=0;k<nEle;k++){
