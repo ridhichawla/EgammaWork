@@ -158,11 +158,10 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     edm::Service<TFileService> fs;
     TTree *electronTree_;
 
-    //edm::LumiReWeighting LumiWeights_;
+    edm::LumiReWeighting LumiWeights_;
 
     // If MC
     bool misMC;
-    bool misNLO;
     bool misSIG;
 
     // Histograms
@@ -273,8 +272,9 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     Int_t nElectrons_;
     Int_t nGenElectrons_;
 
-    TClonesArray *gen_preFSR = new TClonesArray("TLorentzVector");
-    TClonesArray &arr = *gen_preFSR;
+    TClonesArray *gen_preFSR;
+    //TClonesArray *gen_preFSR = new TClonesArray("TLorentzVector");
+    //TClonesArray &arr = *gen_preFSR;
 
     //std::vector<TLorentzVector> gen_preFSR;
 
@@ -431,13 +431,12 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
 
   misMC            = iConfig.getUntrackedParameter<bool>("isMC");
   misSIG           = iConfig.getUntrackedParameter<bool>("isSIG");
-  misNLO           = iConfig.getUntrackedParameter<bool>("isNLO");
 
   // initialize 1-D reweighting
-  /*LumiWeights_ = edm::LumiReWeighting("dyJtoLL_M50.root", 
+  LumiWeights_ = edm::LumiReWeighting("MyDataPileupHistogram.root", 
     "MyDataPileupHistogram.root", 
-    "MC_nPU", 
-    "pileup");*/
+    "pileup", 
+    "pileup");
 
   // Prepare tokens for all input collections and objects
 
@@ -570,7 +569,7 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
 
   electronTree_->Branch("nEle"    ,  &nElectrons_ , "nEle/I");
   electronTree_->Branch("nGenEle"    ,  &nGenElectrons_ , "nGenEle/I");
-  electronTree_->Branch("gen_preFSR"    ,  &gen_preFSR    );
+  //electronTree_->Branch("gen_preFSR"    , "TClonesArray", &gen_preFSR, 32000, 0);
   
   electronTree_->Branch("gen_preFSR_ene"    ,  &gen_preFSR_ene_    );
   electronTree_->Branch("gen_preFSR_px"    ,  &gen_preFSR_px_    );
@@ -929,8 +928,8 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     }
   }
 
-  //double MyWeight = LumiWeights_.weight(nPUTrue_);
-  //cout<<"MyWeight: "<<MyWeight<<endl;
+  double MyWeight = LumiWeights_.weight(nPUTrue_);
+  cout<<"MyWeight: "<<MyWeight<<endl;
 
   // Get rho value
   edm::Handle< double > rhoH;
@@ -999,7 +998,9 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
       }
 
-      new(arr[i]) TLorentzVector(preFSR);
+      new ((*gen_preFSR)[i]) TLorentzVector();
+      ((TLorentzVector *)gen_preFSR->At(i))->SetPxPyPzE(genlep.px(), genlep.py(), genlep.pz(), genlep.energy());
+      //new(arr[i]) TLorentzVector(preFSR);
       //gen_preFSR.push_back(preFSR);
 
       if(fabs(id)==11 && genlep.fromHardProcessFinalState()==1){ // post FSR
@@ -1309,7 +1310,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     gen_phiTau_.clear();
 
     gen_preFSR->Clear();
-    //gen_preFSR.clear();
     
     gen_preFSR_ene_.clear();
     gen_preFSR_pt_.clear();
@@ -1409,6 +1409,8 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   void 
     SimpleElectronNtupler::beginJob()
     {
+    gen_preFSR = new TClonesArray("TLorentzVector", 50);
+
     }
 
   // ------------ method called once each job just after ending the event loop  ------------
