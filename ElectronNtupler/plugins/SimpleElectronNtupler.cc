@@ -85,10 +85,9 @@ Implementation:
 #include "PhysicsTools/Utilities/interface/LumiReWeighting.h"
 #include "DataFormats/PatCandidates/interface/MET.h"
 
-//#include "/afs/cern.ch/work/r/rchawla/private/Analysis_ee_13TeV/CMSSW_7_4_15/src/EgammaWork/ElectronNtupler/plugins/utils.h"
+#include "/afs/cern.ch/work/r/rchawla/private/Analysis_ee_13TeV/CMSSW_7_4_15/src/EgammaWork/ElectronNtupler/plugins/utils.h"
 
-#include "HLTrigger/HLTanalyzers/interface/JetUtil.h"
-//#include "/afs/cern.ch/work/r/rchawla/private/Analysis_ee_13TeV/CMSSW_7_4_0/src/EgammaWork/ElectronNtupler/plugins/utils.h"
+//#include "HLTrigger/HLTanalyzers/interface/JetUtil.h"
 //#include "FWCore/ParameterSet/interface/FileInPath.h"
 //#include "/afs/cern.ch/work/r/rchawla/private/CMSSW_7_4_0/src/EgammaWork/ElectronNtupler/plugins/FileInPath.h"
 //
@@ -972,7 +971,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   edm::View<reco::GenParticle> genColl(*(genParticles.product()));
   
   //Sort all the electrons according to pt.
-  std::sort(genColl.begin(),genColl.end(),PtGreater());
+  //std::sort(genColl.begin(),genColl.end(),PtGreater());
   
   if(misMC && misSIG){
     nGenElectrons_ = 0;
@@ -988,11 +987,9 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       int n = genlep.numberOfDaughters();
       if(fabs(id)==11){
         nGenElectrons_++;
-	cout<<"nGenEle: "<<nGenElectrons_<<endl;
 	SumPhotonMom.SetPxPyPzE(0., 0., 0., 0.);
 
 	preFSR.SetPxPyPzE(genlep.px(), genlep.py(), genlep.pz(), genlep.energy());
-	cout<<"pre FSR pt before addition: "<<preFSR.Pt()<<endl;
 
 	for(int j = 0; j < n; ++j) {
 	  const Candidate * daughter = genlep.daughter(j);
@@ -1000,35 +997,25 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
 	  if(fabs(dauId) == 22){
 	    Double_t dR = deltaR(daughter->eta(), daughter->phi(), genlep.eta(), genlep.phi());
-	    //cout<<"***********************************************************"<<endl;
-	    //cout<<"dR: "<<dR<<"   "<<"ID: "<<genlep.pdgId()<<"   "<<"Daughter ID: "<<dauId<<endl;
 
 	    // Sum of all photon's momentum near the post-FSR electron
 	    if(dR<0.1)
 	    {
 	      fourmom.SetPxPyPzE(daughter->px(), daughter->py(), daughter->pz(), daughter->energy());
 	      SumPhotonMom = SumPhotonMom + fourmom;
-	      cout<<"SumPhoton pt: "<<SumPhotonMom.Pt()<<endl;
 	    }
 	  }
 	}
 
 	preFSR = preFSR + SumPhotonMom;
-	cout<<"pre FSR pt after addition: "<<preFSR.Pt()<<endl;
+	
 	new ((*gen_preFSR)[nGenElectrons_]) TLorentzVector(preFSR);
-	TLorentzVector*  fourmom = (TLorentzVector*) gen_preFSR->At(nGenElectrons_);
-        cout<<"i: "<<i<<"   "<<fourmom->Pt()<<endl;
-	//genlep.push_back(i);
+	//TLorentzVector*  fourmom = (TLorentzVector*) gen_preFSR->At(nGenElectrons_);
 
       }
 
-      //new ((*gen_preFSR)[i]) TLorentzVector(preFSR);
-      //((TLorentzVector *)gen_preFSR->At(i))->SetPxPyPzE(genlep.px(), genlep.py(), genlep.pz(), genlep.energy());
-      //cout<<"pre FSR pt: "<<gen_preFSR->Pt()<<endl;
-      
-      //((TLorentzVector *)gen_preFSR->At(i))->preFSR;
-
-      if(fabs(id)==11 && genlep.fromHardProcessFinalState()==1){ // post FSR
+      // gen Post FSR
+      if(fabs(id)==11 && genlep.fromHardProcessFinalState()==1){
 
 	gen_postFSR_ene_.push_back(genlep.energy());
 	gen_postFSR_px_.push_back(genlep.px());
@@ -1041,20 +1028,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
       }
 
-      /*if(fabs(id)==11 && genlep.fromHardProcessBeforeFSR()==1){
-	nGenElectrons_++;
-
-	gen_preFSR_ene_.push_back(genlep.energy());
-	gen_preFSR_px_.push_back(genlep.px());
-	gen_preFSR_py_.push_back(genlep.py());
-	gen_preFSR_pz_.push_back(genlep.pz());
-	gen_preFSR_pt_.push_back(genlep.pt());
-	gen_preFSR_eta_.push_back(genlep.eta());
-	gen_preFSR_rap_.push_back(genlep.rapidity());
-	gen_preFSR_phi_.push_back(genlep.phi());
-
-	}*/
-
       // Separating the taus coming from Z decay
       if(abs(id)==15 && genlep.fromHardProcessDecayed()==1){
 	gen_ptTau_.push_back(genlep.pt());
@@ -1064,16 +1037,12 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
     }
 
-    //genlep_preFSR->Momentum = genlep_Mom_postFSR + SumPhotonMom;
-
     // Select the events containing 2 taus from hard-process
     if(gen_ptTau_.size()==2){
       tauFlag = 1;
     }
 
   }
-
-  cout<<"   "<<endl;
 
   //cout<<"2"<<endl;
 
