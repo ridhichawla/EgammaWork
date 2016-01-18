@@ -130,6 +130,8 @@ void unfold_RMatrix::Loop()
 
     //cout<<"1"<<endl;
 
+    if(jentry==26194585) continue;
+    
     if(!tauFlag){
       if(nEle>=2) {
 	if(doubleElectron) {
@@ -248,7 +250,6 @@ void unfold_RMatrix::Loop()
       ZMass_G_post = digen_post.M();
     }
 
-    if(jentry==26194585) continue;
     responsePost->Fill(ZMass_G_post,ZMass_R_post,theWeight);
 
   } // event
