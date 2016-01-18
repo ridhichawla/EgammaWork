@@ -87,7 +87,7 @@ Implementation:
 
 //#include "/afs/cern.ch/work/r/rchawla/private/Analysis_ee_13TeV/CMSSW_7_4_15/src/EgammaWork/ElectronNtupler/plugins/utils.h"
 
-//#include "HLTrigger/HLTanalyzers/interface/JetUtil.h"
+#include "HLTrigger/HLTanalyzers/interface/JetUtil.h"
 //#include "/afs/cern.ch/work/r/rchawla/private/Analysis_ee_13TeV/CMSSW_7_4_0/src/EgammaWork/ElectronNtupler/plugins/utils.h"
 //#include "FWCore/ParameterSet/interface/FileInPath.h"
 //#include "/afs/cern.ch/work/r/rchawla/private/CMSSW_7_4_0/src/EgammaWork/ElectronNtupler/plugins/FileInPath.h"
@@ -158,14 +158,11 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     edm::Service<TFileService> fs;
     TTree *electronTree_;
 
-    edm::LumiReWeighting LumiWeights_;
+    //edm::LumiReWeighting LumiWeights_;
 
     // If MC
     bool misMC;
     bool misSIG;
-
-    // Histograms
-    TH1F* nevents_;
 
     // Weights for MC@NLO
     double theWeight;
@@ -352,6 +349,7 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
 
     std::vector<Int_t> eleEcalDrivenSeed_;
 
+    // Trigger objects
     std::vector<double> pt_leg1;
     std::vector<double> eta_leg1;
     std::vector<double> phi_leg1;
@@ -363,6 +361,14 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     std::vector<double> pt_Ele;
     std::vector<double> eta_Ele;
     std::vector<double> phi_Ele;
+
+    std::vector<double> et_Photon30;
+    std::vector<double> et_Photon36;
+    std::vector<double> et_Photon50;
+    std::vector<double> et_Photon75;
+    std::vector<double> et_Photon90;
+    std::vector<double> et_Photon120;
+    std::vector<double> et_Photon175;
 
     // all muon variables
     Int_t nMuons_;
@@ -402,9 +408,7 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   //mvaValuesMapToken_(consumes<edm::ValueMap<float> >(iConfig.getParameter<edm::InputTag>("mvaValuesMap"))),
   //mvaCategoriesMapToken_(consumes<edm::ValueMap<int> >(iConfig.getParameter<edm::InputTag>("mvaCategoriesMap")))
 {
-  //gen_preFSR = new TClonesArray("TLorentzVector");
   
-  nevents_ = fs->make<TH1F>("nevents_","nevents_",2,0,2);
   string_singleEle      = "HLT_Ele23_WPLoose_Gsf_v";
   string_singleMuon     = "HLT_IsoMu20_v";
   string_doubleEle      = "HLT_Ele17_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v";
@@ -433,10 +437,10 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   misSIG           = iConfig.getUntrackedParameter<bool>("isSIG");
 
   // initialize 1-D reweighting
-  LumiWeights_ = edm::LumiReWeighting("MyDataPileupHistogram.root", 
+  /*LumiWeights_ = edm::LumiReWeighting("MyDataPileupHistogram.root", 
     "MyDataPileupHistogram.root", 
     "pileup", 
-    "pileup");
+    "pileup");*/
 
   // Prepare tokens for all input collections and objects
 
@@ -562,6 +566,14 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronTree_->Branch("eta_Ele"   ,  &eta_Ele   );
   electronTree_->Branch("phi_Ele"   ,  &phi_Ele   );
 
+  electronTree_->Branch("et_Photon30", &et_Photon30);
+  electronTree_->Branch("et_Photon36", &et_Photon36);
+  electronTree_->Branch("et_Photon50", &et_Photon50);
+  electronTree_->Branch("et_Photon75", &et_Photon75);
+  electronTree_->Branch("et_Photon90", &et_Photon90);
+  electronTree_->Branch("et_Photon120", &et_Photon120);
+  electronTree_->Branch("et_Photon175", &et_Photon175);
+  
   electronTree_->Branch("tauFlag", &tauFlag, "tauFlag/I");
   electronTree_->Branch("gen_ptTau", &gen_ptTau_);
   electronTree_->Branch("gen_etaTau", &gen_etaTau_);
@@ -569,17 +581,7 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
 
   electronTree_->Branch("nEle"    ,  &nElectrons_ , "nEle/I");
   electronTree_->Branch("nGenEle"    ,  &nGenElectrons_ , "nGenEle/I");
-  //electronTree_->Branch("gen_preFSR"    , "TClonesArray", &gen_preFSR, 32000, 0);
   
-  electronTree_->Branch("gen_preFSR_ene"    ,  &gen_preFSR_ene_    );
-  electronTree_->Branch("gen_preFSR_px"    ,  &gen_preFSR_px_    );
-  electronTree_->Branch("gen_preFSR_py"    ,  &gen_preFSR_py_    );
-  electronTree_->Branch("gen_preFSR_pz"    ,  &gen_preFSR_pz_    );
-  electronTree_->Branch("gen_preFSR_pt"    ,  &gen_preFSR_pt_    );
-  electronTree_->Branch("gen_preFSR_eta"    ,  &gen_preFSR_eta_    );
-  electronTree_->Branch("gen_preFSR_rap"    ,  &gen_preFSR_rap_    );
-  electronTree_->Branch("gen_preFSR_phi"    ,  &gen_preFSR_phi_    );
-
   electronTree_->Branch("gen_postFSR_ene"    ,  &gen_postFSR_ene_    );
   electronTree_->Branch("gen_postFSR_px"    ,  &gen_postFSR_px_    );
   electronTree_->Branch("gen_postFSR_py"    ,  &gen_postFSR_py_    );
@@ -680,7 +682,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   using namespace edm;
   using namespace reco;
 
-  nevents_->Fill(1);
   RunNo_ = iEvent.id().run();
   EvtNo_ = iEvent.id().event();
   Lumi_  = iEvent.luminosityBlock();
@@ -692,12 +693,9 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     Handle<GenEventInfoProduct> genEvtInfo;
     iEvent.getByLabel("generator", genEvtInfo);
 
-    //std::vector<double> evtWeights = genEvtInfo->weights();
-
     if (genEvtInfo.isValid()) {
       theWeight = genEvtInfo->weight();
     }
-    //cout<<"Weight: "<<theWeight<<endl;
   }
 
   // MET
@@ -727,7 +725,14 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   std::string DEProbeFilter("hltEle17Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg2Filter");
   std::string SEFilter("hltEle23WPLooseGsfTrackIsoFilter");
   //std::string SEDataFilter("hltSingleEle22WPLooseGsfTrackIsoFilter");//hltEle23WP75GsfTrackIsoFilter");
-
+  
+  std::string photon30Filter("hltEG30HEFilter");
+  std::string photon36Filter("hltEG36HEFilter");
+  std::string photon50Filter("hltEG50HEFilter");
+  std::string photon75Filter("hltEG75HEFilter");
+  std::string photon90Filter("hltEG90HEFilter");
+  std::string photon120Filter("hltEG120HEFilter");
+  std::string photon175Filter("hltEG175HEFilter");
 
   //bool trigResult = false;
 
@@ -770,6 +775,14 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	eta_Ele.push_back(obj.eta());
 	phi_Ele.push_back(obj.phi());
       }
+
+      if((photon30Filter.compare(obj.filterLabels()[j]))==0) et_Photon30.push_back(obj.et());
+      if((photon36Filter.compare(obj.filterLabels()[j]))==0) et_Photon36.push_back(obj.et());
+      if((photon50Filter.compare(obj.filterLabels()[j]))==0) et_Photon50.push_back(obj.et());
+      if((photon75Filter.compare(obj.filterLabels()[j]))==0) et_Photon75.push_back(obj.et());
+      if((photon90Filter.compare(obj.filterLabels()[j]))==0) et_Photon90.push_back(obj.et());
+      if((photon120Filter.compare(obj.filterLabels()[j]))==0) et_Photon120.push_back(obj.et());
+      if((photon175Filter.compare(obj.filterLabels()[j]))==0) et_Photon175.push_back(obj.et());
 
     } // obj.filterLabels().size()
   } // triggerObjects
@@ -928,8 +941,8 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     }
   }
 
-  double MyWeight = LumiWeights_.weight(nPUTrue_);
-  cout<<"MyWeight: "<<MyWeight<<endl;
+  //double MyWeight = LumiWeights_.weight(nPUTrue_);
+  //cout<<"MyWeight: "<<MyWeight<<endl;
 
   // Get rho value
   edm::Handle< double > rhoH;
@@ -956,6 +969,11 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   else
     iEvent.getByToken(genParticlesMiniAODToken_,genParticles);
 
+  edm::View<reco::GenParticle> genColl(*(genParticles.product()));
+  
+  //Sort all the electrons according to pt.
+  std::sort(genColl.begin(),genColl.end(),PtGreater());
+  
   if(misMC && misSIG){
     nGenElectrons_ = 0;
     tauFlag = 0;
@@ -969,10 +987,12 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
       int n = genlep.numberOfDaughters();
       if(fabs(id)==11){
+        nGenElectrons_++;
+	cout<<"nGenEle: "<<nGenElectrons_<<endl;
 	SumPhotonMom.SetPxPyPzE(0., 0., 0., 0.);
-	
+
 	preFSR.SetPxPyPzE(genlep.px(), genlep.py(), genlep.pz(), genlep.energy());
-	//cout<<"pre FSR pt before addition: "<<preFSR.Pt()<<endl;
+	cout<<"pre FSR pt before addition: "<<preFSR.Pt()<<endl;
 
 	for(int j = 0; j < n; ++j) {
 	  const Candidate * daughter = genlep.daughter(j);
@@ -988,24 +1008,28 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	    {
 	      fourmom.SetPxPyPzE(daughter->px(), daughter->py(), daughter->pz(), daughter->energy());
 	      SumPhotonMom = SumPhotonMom + fourmom;
-	      //cout<<"SumPhoton pt: "<<SumPhotonMom.Pt()<<endl;
+	      cout<<"SumPhoton pt: "<<SumPhotonMom.Pt()<<endl;
 	    }
 	  }
 	}
 
 	preFSR = preFSR + SumPhotonMom;
-	//cout<<"pre FSR pt after addition: "<<preFSR.Pt()<<endl;
+	cout<<"pre FSR pt after addition: "<<preFSR.Pt()<<endl;
+	new ((*gen_preFSR)[nGenElectrons_]) TLorentzVector(preFSR);
+	TLorentzVector*  fourmom = (TLorentzVector*) gen_preFSR->At(nGenElectrons_);
+        cout<<"i: "<<i<<"   "<<fourmom->Pt()<<endl;
+	//genlep.push_back(i);
 
       }
 
-      new ((*gen_preFSR)[i]) TLorentzVector();
-      ((TLorentzVector *)gen_preFSR->At(i))->SetPxPyPzE(genlep.px(), genlep.py(), genlep.pz(), genlep.energy());
-      //new(arr[i]) TLorentzVector(preFSR);
-      //gen_preFSR.push_back(preFSR);
+      //new ((*gen_preFSR)[i]) TLorentzVector(preFSR);
+      //((TLorentzVector *)gen_preFSR->At(i))->SetPxPyPzE(genlep.px(), genlep.py(), genlep.pz(), genlep.energy());
+      //cout<<"pre FSR pt: "<<gen_preFSR->Pt()<<endl;
+      
+      //((TLorentzVector *)gen_preFSR->At(i))->preFSR;
 
       if(fabs(id)==11 && genlep.fromHardProcessFinalState()==1){ // post FSR
-	//cout<<"gen post FSR pt: "<<genlep.pt()<<endl;
-	
+
 	gen_postFSR_ene_.push_back(genlep.energy());
 	gen_postFSR_px_.push_back(genlep.px());
 	gen_postFSR_py_.push_back(genlep.py());
@@ -1049,7 +1073,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   }
 
-  //cout<<"   "<<endl;
+  cout<<"   "<<endl;
 
   //cout<<"2"<<endl;
 
@@ -1304,13 +1328,21 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   eta_Ele.clear();
   phi_Ele.clear();
 
+  et_Photon30.clear();
+  et_Photon36.clear();
+  et_Photon50.clear();
+  et_Photon75.clear();
+  et_Photon90.clear();
+  et_Photon120.clear();
+  et_Photon175.clear();
+
   if(misMC){
     gen_ptTau_.clear();
     gen_etaTau_.clear();
     gen_phiTau_.clear();
 
     gen_preFSR->Clear();
-    
+
     gen_preFSR_ene_.clear();
     gen_preFSR_pt_.clear();
     gen_preFSR_px_.clear();
@@ -1409,7 +1441,8 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   void 
     SimpleElectronNtupler::beginJob()
     {
-    gen_preFSR = new TClonesArray("TLorentzVector", 50);
+      gen_preFSR = new TClonesArray("TLorentzVector", 1500);
+      electronTree_->Branch("gen_preFSR" , "TClonesArray", &gen_preFSR, 32000, 0);
 
     }
 
