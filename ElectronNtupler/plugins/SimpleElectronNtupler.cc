@@ -126,6 +126,7 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     // MiniAOD case data members
     edm::EDGetToken muonsMiniAODToken_;
     edm::EDGetToken electronsMiniAODToken_;
+    edm::EDGetToken photonsMiniAODToken_;
     edm::EDGetTokenT<reco::VertexCollection> vtxMiniAODToken_;
     edm::EDGetTokenT<reco::ConversionCollection> conversionsMiniAODToken_;
 
@@ -138,11 +139,14 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     virtual Double_t deltaPhi(Double_t phientry1 , Double_t phientry2 );
     virtual Double_t deltaEta(Double_t etaentry1 , Double_t etaentry2);
     virtual Double_t deltaR(Double_t etaentry1 , Double_t phientry1 , Double_t etaentry2 , Double_t phientry2);
-    
+
     edm::Service<TFileService> fs;
     TTree *electronTree_;
 
     //edm::LumiReWeighting LumiWeights_;
+
+    //TH1F* etPhoton;
+    //TH1F* etPhoton_preScale;
 
     // If MC
     bool misMC;
@@ -186,7 +190,7 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     bool doubleEMu_17_8;
     bool doubleEMu_12_17;
     bool doubleEMu_23_8;
-    
+
     std::vector<int> idx_singleEle;
     std::vector<int> idx_singleMuon;
     std::vector<int> idx_doubleElectron;
@@ -323,9 +327,17 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     std::vector<double> isoPFMuon_;
     std::vector<double> isoTrkMuon_;
 
+    // MET variables
     std::vector<double> metPt_;
     std::vector<double> metPhi_;
     std::vector<double> metSumEt_;
+
+    // photon variables
+    Int_t nPhotons_;
+
+    std::vector<Float_t> ptPhoton_;
+    std::vector<Float_t> etaPhoton_;
+    std::vector<Float_t> phiPhoton_;
 
     double DeltaR(const pat::Electron& e, std::vector<pat::TriggerObjectStandAlone> object);
 };
@@ -402,7 +414,7 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
 
   /*genParticlesToken_ = mayConsume<edm::View<reco::GenParticle> >
     (iConfig.getParameter<edm::InputTag>
-     ("genParticles"));*/
+    ("genParticles"));*/
 
   conversionsToken_ = mayConsume< reco::ConversionCollection >
     (iConfig.getParameter<edm::InputTag>
@@ -417,6 +429,10 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronsMiniAODToken_    = mayConsume<edm::View<reco::GsfElectron> >
     (iConfig.getParameter<edm::InputTag>
      ("electronsMiniAOD"));
+
+  photonsMiniAODToken_ = mayConsume<edm::View<reco::Photon> >
+    (iConfig.getParameter<edm::InputTag>
+     ("photonsMiniAOD"));
 
   vtxMiniAODToken_          = mayConsume<reco::VertexCollection>
     (iConfig.getParameter<edm::InputTag>
@@ -563,6 +579,11 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronTree_->Branch("metPhi", &metPhi_);
   electronTree_->Branch("metSumEt", &metSumEt_);
 
+  electronTree_->Branch("nPhotons",  &nPhotons_ , "nPhotons/I");
+  electronTree_->Branch("ptPhoton"  ,  &ptPhoton_    );
+  electronTree_->Branch("etaPhoton" ,  &etaPhoton_ );
+  electronTree_->Branch("phiPhoton" ,  &phiPhoton_ );
+
 }
 
 SimpleElectronNtupler::~SimpleElectronNtupler()
@@ -622,16 +643,16 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   /*bool trigResult = false;
 
-  for (unsigned int i=0; i<triggerHandle->size(); i++)
-  {
+    for (unsigned int i=0; i<triggerHandle->size(); i++)
+    {
     std::string trigName = triggerNames.triggerName(i);
-    //trigResult = triggerHandle->accept(i);
-    //cout<<"Name of Trigger = "<<trigName<<"   Trigger Result = "<<trigResult<<"   Trigger Number = "<<i<<endl;
+  //trigResult = triggerHandle->accept(i);
+  //cout<<"Name of Trigger = "<<trigName<<"   Trigger Result = "<<trigResult<<"   Trigger Number = "<<i<<endl;
   }*/
 
   singlePhoton = 0;
   prescalePhoton = 0;
-  
+
   photon30 = false; photon36 = false; photon50 = false; photon75 = false; photon90 = false; photon120 = false; photon175 = false;
 
   for (pat::TriggerObjectStandAlone obj : *triggerObjects) {
@@ -658,10 +679,10 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
       if((photon30Filter.compare(obj.filterLabels()[j]))==0 || (photon36Filter.compare(obj.filterLabels()[j]))==0 || (photon50Filter.compare(obj.filterLabels()[j]))==0 || (photon75Filter.compare(obj.filterLabels()[j]))==0 || (photon90Filter.compare(obj.filterLabels()[j]))==0 || (photon120Filter.compare(obj.filterLabels()[j]))==0 || (photon175Filter.compare(obj.filterLabels()[j]))==0){
 
-	cout<<"et of photon: "<<obj.et()<<endl;
+	//cout<<"et of photon: "<<obj.et()<<endl;
 
 	if(obj.et() >= 30. && obj.et() < 36.){
-	  cout<<"filter label: "<<obj.filterLabels()[j]<<endl;
+	  //cout<<"filter label: "<<obj.filterLabels()[j]<<endl;
 	  if((photon30Filter.compare(obj.filterLabels()[j]))==0){
 	    photon30 = true;
 	    et_Photon.push_back(obj.et()); 
@@ -669,7 +690,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	}
 
 	if(obj.et() >=36. && obj.et() < 50.){
-	  cout<<"filter label: "<<obj.filterLabels()[j]<<endl;
+	  //cout<<"filter label: "<<obj.filterLabels()[j]<<endl;
 	  if((photon36Filter.compare(obj.filterLabels()[j]))==0){
 	    photon36 = true;
 	    et_Photon.push_back(obj.et());
@@ -677,7 +698,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	}
 
 	if(obj.et() >= 50. && obj.et() < 75.){
-	  cout<<"filter label: "<<obj.filterLabels()[j]<<endl;
+	  //cout<<"filter label: "<<obj.filterLabels()[j]<<endl;
 	  if((photon50Filter.compare(obj.filterLabels()[j]))==0){
 	    photon50 = true;
 	    et_Photon.push_back(obj.et());
@@ -685,7 +706,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	}
 
 	if(obj.et() >= 75. && obj.et() < 90.){
-	  cout<<"filter label: "<<obj.filterLabels()[j]<<endl;
+	  //cout<<"filter label: "<<obj.filterLabels()[j]<<endl;
 	  if((photon75Filter.compare(obj.filterLabels()[j]))==0){
 	    photon75 = true;
 	    et_Photon.push_back(obj.et());
@@ -693,8 +714,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	}
 
 	if(obj.et() >= 90. && obj.et() < 120.){
-	  cout<<"et: "<<obj.et()<<endl;
-	  cout<<"filter label: "<<obj.filterLabels()[j]<<endl;
+	  //cout<<"filter label: "<<obj.filterLabels()[j]<<endl;
 	  if((photon90Filter.compare(obj.filterLabels()[j]))==0){
 	    photon90 = true;
 	    et_Photon.push_back(obj.et());
@@ -702,7 +722,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	}
 
 	if(obj.et() >= 120. && obj.et() < 175.){
-	  cout<<"filter label: "<<obj.filterLabels()[j]<<endl;
+	  //cout<<"filter label: "<<obj.filterLabels()[j]<<endl;
 	  if((photon120Filter.compare(obj.filterLabels()[j]))==0){
 	    photon120 = true;
 	    et_Photon.push_back(obj.et());
@@ -710,7 +730,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	}
 
 	if(obj.et() >= 175.){
-	  cout<<"filter label: "<<obj.filterLabels()[j]<<endl;
+	  //cout<<"filter label: "<<obj.filterLabels()[j]<<endl;
 	  if((photon175Filter.compare(obj.filterLabels()[j]))==0){
 	    photon175 = true;
 	    et_Photon.push_back(obj.et());
@@ -721,7 +741,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     } // obj.filterLabels().size()
   } // triggerObjects
 
-  cout<<"photon30: "<<photon30<<"   "<<"photon36: "<<photon36<<"   "<<"photon50: "<<photon50<<"   "<<"photon75: "<<photon75<<"   "<<"photon90: "<<photon90<<"   "<<"photon120: "<<photon120<<"   "<<"photon175: "<<photon175<<"   "<<endl;
+  //cout<<"photon30: "<<photon30<<"   "<<"photon36: "<<photon36<<"   "<<"photon50: "<<photon50<<"   "<<"photon75: "<<photon75<<"   "<<"photon90: "<<photon90<<"   "<<"photon120: "<<photon120<<"   "<<"photon175: "<<photon175<<"   "<<endl;
 
   for (unsigned int i=0; i<triggerHandle->size(); i++)
   {
@@ -776,9 +796,10 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   }
 
-  cout<<"singlePhoton: "<<singlePhoton<<"   "<<"prescalePhoton: "<<prescalePhoton<<endl;
-  cout<<""<<endl;
-  cout<<""<<endl;
+  //etPhoton->Fill(et_Photon);
+  //etPhoton_preScale->Fill(et_Photon,prescalePhoton);
+
+  //cout<<"singlePhoton: "<<singlePhoton<<"   "<<"prescalePhoton: "<<prescalePhoton<<endl;
 
   hlNames_ = triggerNames.triggerNames();
   int ntriggers = hlNames_.size();
@@ -1169,6 +1190,27 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   metPhi_.push_back(met.phi());
   metSumEt_.push_back(met.sumEt());
 
+  edm::Handle<edm::View<reco::Photon> > photons;
+  iEvent.getByToken(photonsMiniAODToken_,photons);
+
+  nPhotons_ = 0;
+
+  // Loop over photons
+  for (size_t i = 0; i < photons->size(); ++i){
+    const auto pho = photons->ptrAt(i);
+
+    // Kinematics
+    if(pho->pt() < 15.){
+      nPhotons_++;
+
+      // Kinematics
+      ptPhoton_  .push_back(pho->pt());
+      etaPhoton_ .push_back(pho->superCluster()->eta());
+      phiPhoton_ .push_back(pho->superCluster()->phi());
+
+    }
+  }
+
   //cout<<"4"<<endl;
 
   // Save this electron's info
@@ -1288,6 +1330,10 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   metPt_.clear();
   metPhi_.clear();
   metSumEt_.clear();
+
+  ptPhoton_.clear();
+  etaPhoton_.clear();
+  phiPhoton_.clear();
 
 }
 // ------------ method called once each job just before starting event loop  ------------
