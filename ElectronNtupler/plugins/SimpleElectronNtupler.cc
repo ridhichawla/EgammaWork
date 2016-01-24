@@ -136,6 +136,10 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     edm::EDGetTokenT<edm::ValueMap<bool> > eleMediumIdMapToken_;
     edm::EDGetTokenT<edm::ValueMap<bool> > eleTightIdMapToken_;
 
+    //edm::EDGetTokenT<edm::ValueMap<bool> > phoLooseIdMapToken_;
+    //edm::EDGetTokenT<edm::ValueMap<bool> > phoMediumIdMapToken_;
+    //edm::EDGetTokenT<edm::ValueMap<bool> > phoTightIdMapToken_;
+
     virtual Double_t deltaPhi(Double_t phientry1 , Double_t phientry2 );
     virtual Double_t deltaEta(Double_t etaentry1 , Double_t etaentry2);
     virtual Double_t deltaR(Double_t etaentry1 , Double_t phientry1 , Double_t etaentry2 , Double_t phientry2);
@@ -144,9 +148,6 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     TTree *electronTree_;
 
     //edm::LumiReWeighting LumiWeights_;
-
-    //TH1F* etPhoton;
-    //TH1F* etPhoton_preScale;
 
     // If MC
     bool misMC;
@@ -284,6 +285,7 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     std::vector<double> phi_Ele;
 
     // Triggers for Fake-Rate method
+    std::regex Photon_22;
     std::regex Photon_30;
     std::regex Photon_36;
     std::regex Photon_50;
@@ -295,6 +297,7 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     int singlePhoton;
     int prescalePhoton;
 
+    bool photon22;
     bool photon30;
     bool photon36;
     bool photon50;
@@ -339,6 +342,10 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     std::vector<Float_t> etaPhoton_;
     std::vector<Float_t> phiPhoton_;
 
+    //std::vector<Int_t> phoPassLooseId_;
+    //std::vector<Int_t> phoPassMediumId_;
+    //std::vector<Int_t> phoPassTightId_;
+
     double DeltaR(const pat::Electron& e, std::vector<pat::TriggerObjectStandAlone> object);
 };
 
@@ -348,6 +355,9 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   eleLooseIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleLooseIdMap"))),
   eleMediumIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleMediumIdMap"))),
   eleTightIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleTightIdMap")))
+  //phoLooseIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("phoLooseIdMap"))),
+  //phoMediumIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("phoMediumIdMap"))),
+  //phoTightIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("phoTightIdMap")))
 {
 
   string_singleEle      = "HLT_Ele23_WPLoose_Gsf_v";
@@ -358,6 +368,7 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   string_emu_23_8       = "HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_v";
 
   // triggers for Fake-Rate method
+  Photon_22  = "(HLT_Photon22_v)(.*)";
   Photon_30  = "(HLT_Photon30_v)(.*)";
   Photon_36  = "(HLT_Photon36_v)(.*)";
   Photon_50  = "(HLT_Photon50_v)(.*)";
@@ -584,6 +595,10 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronTree_->Branch("etaPhoton" ,  &etaPhoton_ );
   electronTree_->Branch("phiPhoton" ,  &phiPhoton_ );
 
+  //electronTree_->Branch("phoPassLooseId"  ,  &phoPassLooseId_ );
+  //electronTree_->Branch("phoPassMediumId" ,  &phoPassMediumId_ );
+  //electronTree_->Branch("phoPassTightId"  ,  &phoPassTightId_ );
+
 }
 
 SimpleElectronNtupler::~SimpleElectronNtupler()
@@ -633,6 +648,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   std::string DEProbeFilter("hltEle17Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg2Filter");
   std::string SEFilter("hltEle23WPLooseGsfTrackIsoFilter");
 
+  std::string photon22Filter("hltEG22HEFilter");
   std::string photon30Filter("hltEG30HEFilter");
   std::string photon36Filter("hltEG36HEFilter");
   std::string photon50Filter("hltEG50HEFilter");
@@ -653,7 +669,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   singlePhoton = 0;
   prescalePhoton = 0;
 
-  photon30 = false; photon36 = false; photon50 = false; photon75 = false; photon90 = false; photon120 = false; photon175 = false;
+  photon22 = false; photon30 = false; photon36 = false; photon50 = false; photon75 = false; photon90 = false; photon120 = false; photon175 = false;
 
   for (pat::TriggerObjectStandAlone obj : *triggerObjects) {
     obj.unpackPathNames(triggerNames);
@@ -677,12 +693,16 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	phi_Ele.push_back(obj.phi());
       }
 
-      if((photon30Filter.compare(obj.filterLabels()[j]))==0 || (photon36Filter.compare(obj.filterLabels()[j]))==0 || (photon50Filter.compare(obj.filterLabels()[j]))==0 || (photon75Filter.compare(obj.filterLabels()[j]))==0 || (photon90Filter.compare(obj.filterLabels()[j]))==0 || (photon120Filter.compare(obj.filterLabels()[j]))==0 || (photon175Filter.compare(obj.filterLabels()[j]))==0){
+      if((photon22Filter.compare(obj.filterLabels()[j]))==0 || (photon30Filter.compare(obj.filterLabels()[j]))==0 || (photon36Filter.compare(obj.filterLabels()[j]))==0 || (photon50Filter.compare(obj.filterLabels()[j]))==0 || (photon75Filter.compare(obj.filterLabels()[j]))==0 || (photon90Filter.compare(obj.filterLabels()[j]))==0 || (photon120Filter.compare(obj.filterLabels()[j]))==0 || (photon175Filter.compare(obj.filterLabels()[j]))==0){
 
-	//cout<<"et of photon: "<<obj.et()<<endl;
+	if(obj.et() >= 22. && obj.et() < 30.){
+	  if((photon22Filter.compare(obj.filterLabels()[j]))==0){
+	    photon22 = true;
+	    et_Photon.push_back(obj.et());
+	  }
+	}
 
 	if(obj.et() >= 30. && obj.et() < 36.){
-	  //cout<<"filter label: "<<obj.filterLabels()[j]<<endl;
 	  if((photon30Filter.compare(obj.filterLabels()[j]))==0){
 	    photon30 = true;
 	    et_Photon.push_back(obj.et()); 
@@ -690,7 +710,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	}
 
 	if(obj.et() >=36. && obj.et() < 50.){
-	  //cout<<"filter label: "<<obj.filterLabels()[j]<<endl;
 	  if((photon36Filter.compare(obj.filterLabels()[j]))==0){
 	    photon36 = true;
 	    et_Photon.push_back(obj.et());
@@ -698,7 +717,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	}
 
 	if(obj.et() >= 50. && obj.et() < 75.){
-	  //cout<<"filter label: "<<obj.filterLabels()[j]<<endl;
 	  if((photon50Filter.compare(obj.filterLabels()[j]))==0){
 	    photon50 = true;
 	    et_Photon.push_back(obj.et());
@@ -706,7 +724,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	}
 
 	if(obj.et() >= 75. && obj.et() < 90.){
-	  //cout<<"filter label: "<<obj.filterLabels()[j]<<endl;
 	  if((photon75Filter.compare(obj.filterLabels()[j]))==0){
 	    photon75 = true;
 	    et_Photon.push_back(obj.et());
@@ -714,7 +731,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	}
 
 	if(obj.et() >= 90. && obj.et() < 120.){
-	  //cout<<"filter label: "<<obj.filterLabels()[j]<<endl;
 	  if((photon90Filter.compare(obj.filterLabels()[j]))==0){
 	    photon90 = true;
 	    et_Photon.push_back(obj.et());
@@ -722,7 +738,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	}
 
 	if(obj.et() >= 120. && obj.et() < 175.){
-	  //cout<<"filter label: "<<obj.filterLabels()[j]<<endl;
 	  if((photon120Filter.compare(obj.filterLabels()[j]))==0){
 	    photon120 = true;
 	    et_Photon.push_back(obj.et());
@@ -730,7 +745,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	}
 
 	if(obj.et() >= 175.){
-	  //cout<<"filter label: "<<obj.filterLabels()[j]<<endl;
 	  if((photon175Filter.compare(obj.filterLabels()[j]))==0){
 	    photon175 = true;
 	    et_Photon.push_back(obj.et());
@@ -741,10 +755,15 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     } // obj.filterLabels().size()
   } // triggerObjects
 
-  //cout<<"photon30: "<<photon30<<"   "<<"photon36: "<<photon36<<"   "<<"photon50: "<<photon50<<"   "<<"photon75: "<<photon75<<"   "<<"photon90: "<<photon90<<"   "<<"photon120: "<<photon120<<"   "<<"photon175: "<<photon175<<"   "<<endl;
-
   for (unsigned int i=0; i<triggerHandle->size(); i++)
   {
+    if(photon22){
+      if(std::regex_match(triggerNames.triggerName(i),Photon_22)) {
+	singlePhoton = triggerHandle->accept(i);
+	prescalePhoton = triggerPrescales->getPrescaleForIndex(i);
+      }
+    }
+
     if(photon30){
       if(std::regex_match(triggerNames.triggerName(i),Photon_30)) {
 	singlePhoton = triggerHandle->accept(i);
@@ -795,9 +814,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     }
 
   }
-
-  //etPhoton->Fill(et_Photon);
-  //etPhoton_preScale->Fill(et_Photon,prescalePhoton);
 
   //cout<<"singlePhoton: "<<singlePhoton<<"   "<<"prescalePhoton: "<<prescalePhoton<<endl;
 
@@ -989,6 +1005,8 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   } // isMC && isSIG
 
+  //cout<<"2"<<endl;
+  
   // Get PV
   edm::Handle<reco::VertexCollection> vertices;
   if( isAOD )
@@ -1032,6 +1050,8 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   nElectrons_ = 0;
   //cout<<"Event: "<<iEvent.id().event()<<"   "<<"Electrons: "<<electrons->size()<<endl;//"      trigger: "<<doubleElectron<<endl;
 
+  //cout<<"3"<<endl;
+  
   // Loop over electrons
   for (size_t i = 0; i < electrons->size(); ++i){
     const auto el = electrons->ptrAt(i);
@@ -1132,6 +1152,8 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     }
   }
 
+  //cout<<"4"<<endl;
+  
   edm::Handle<edm::View<pat::Muon> > muons;
   iEvent.getByToken(muonsMiniAODToken_,muons);
 
@@ -1193,6 +1215,15 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   edm::Handle<edm::View<reco::Photon> > photons;
   iEvent.getByToken(photonsMiniAODToken_,photons);
 
+  /*edm::Handle<edm::ValueMap<bool> > pho_loose_id_decisions;
+  edm::Handle<edm::ValueMap<bool> > pho_medium_id_decisions;
+  edm::Handle<edm::ValueMap<bool> > pho_tight_id_decisions;
+  iEvent.getByToken(phoLooseIdMapToken_ ,pho_loose_id_decisions);
+  iEvent.getByToken(phoMediumIdMapToken_,pho_medium_id_decisions);
+  iEvent.getByToken(phoTightIdMapToken_ ,pho_tight_id_decisions);*/
+
+  //cout<<"5"<<endl;
+  
   nPhotons_ = 0;
 
   // Loop over photons
@@ -1207,6 +1238,13 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       ptPhoton_  .push_back(pho->pt());
       etaPhoton_ .push_back(pho->superCluster()->eta());
       phiPhoton_ .push_back(pho->superCluster()->phi());
+
+      /*bool isPhoPassLoose  = (*pho_loose_id_decisions)[pho];
+      bool isPhoPassMedium = (*pho_medium_id_decisions)[pho];
+      bool isPhoPassTight  = (*pho_tight_id_decisions)[pho];
+      phoPassLooseId_.push_back ( (int)isPhoPassLoose );
+      phoPassMediumId_.push_back( (int)isPhoPassMedium);
+      phoPassTightId_.push_back ( (int)isPhoPassTight );*/
 
     }
   }
@@ -1334,6 +1372,10 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   ptPhoton_.clear();
   etaPhoton_.clear();
   phiPhoton_.clear();
+
+  //phoPassLooseId_ .clear();
+  //phoPassMediumId_.clear();
+  //phoPassTightId_ .clear();
 
 }
 // ------------ method called once each job just before starting event loop  ------------

@@ -19,9 +19,9 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 #process.GlobalTag.globaltag = 'GR_E_V49::All'                                                 #Data
 
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff")
-process.GlobalTag.globaltag = cms.string("74X_dataRun2_reMiniAOD_v0")                                     #Data
+#process.GlobalTag.globaltag = cms.string("74X_dataRun2_reMiniAOD_v0")                                     #Data
 #process.GlobalTag.globaltag = cms.string("74X_dataRun2_Prompt_v4")
-#process.GlobalTag.globaltag = cms.string("74X_mcRun2_asymptotic_v2")                                      #MC
+process.GlobalTag.globaltag = cms.string("74X_mcRun2_asymptotic_v2")                                      #MC
 
 inputFilesAOD = cms.untracked.vstring(
     # AOD test files from /DYJetsToLL_M-50_13TeV-madgraph-pythia8/Phys14DR-PU20bx25_PHYS14_25_V1-v1/AODSIM
@@ -33,15 +33,17 @@ inputFilesAOD = cms.untracked.vstring(
 inputFilesMiniAOD = cms.untracked.vstring(
     # MiniAOD test files from /DYJetsToLL_M-50_13TeV-madgraph-pythia8/Phys14DR-PU20bx25_PHYS14_25_V1-v1/MINIAODSIM
     
-    '/store/data/Run2015D/SinglePhoton/MINIAOD/05Oct2015-v1/10000/006B6A67-B26F-E511-8341-002590593902.root'
+    #'/store/data/Run2015D/SinglePhoton/MINIAOD/05Oct2015-v1/10000/006B6A67-B26F-E511-8341-002590593902.root'
     #'/store/data/Run2015D/SingleElectron/MINIAOD/PromptReco-v4/000/258/159/00000/0EC56452-186C-E511-8158-02163E0146D5.root'
     #'/store/data/Run2015D/SingleElectron/MINIAOD/05Oct2015-v1/10000/00991D45-4E6F-E511-932C-0025905A48F2.root'
     
     #'/store/data/Run2015D/MuonEG/MINIAOD/PromptReco-v4/000/258/159/00000/64914E6C-F26B-E511-B0C8-02163E0142D1.root'
     #'/store/data/Run2015D/MuonEG/MINIAOD/05Oct2015-v2/60000/00D43A12-C573-E511-8F4C-0025905A60E0.root'
     
+    #'/store/data/Run2015D/DoubleEG/MINIAOD/05Oct2015-v1/50000/0014E86F-656F-E511-9D3F-002618943831.root'
     #'/store/data/Run2015D/DoubleEG/MINIAOD/PromptReco-v4/000/258/159/00000/027612B0-306C-E511-BD47-02163E014496.root'
     
+    '/store/mc/RunIISpring15MiniAODv2/DYJetsToLL_M-500to700_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/60000/C057FAA9-456C-E511-BA7D-0025905C42FE.root'
     #'/store/mc/RunIISpring15MiniAODv2/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/50000/041705A6-6F6F-E511-AC9C-001E6757F1D4.root'
     #'/store/mc/RunIISpring15MiniAODv2/WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/40000/008865AA-596D-E511-92F1-0025905A6110.root'
     #'/store/mc/RunIISpring15MiniAODv2/TT_TuneCUETP8M1_13TeV-powheg-pythia8/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/40000/00087FEB-236E-E511-9ACB-003048FF86CA.root'
@@ -79,13 +81,12 @@ switchOnVIDElectronIdProducer(process, dataFormat)
 
 # define which IDs we want to produce
 my_id_modules = ['RecoEgamma.ElectronIdentification.Identification.cutBasedElectronID_Spring15_25ns_V1_cff',
-	                 #'RecoEgamma.ElectronIdentification.Identification.mvaElectronID_PHYS14_PU20bx25_nonTrig_V1_cff',
-			 'RecoEgamma.ElectronIdentification.Identification.heepElectronID_HEEPV60_cff']
+	         #'RecoEgamma.PhotonIdentification.Identification.cutBasedPhotonID_Spring15_25ns_V1_cff',
+                 'RecoEgamma.ElectronIdentification.Identification.heepElectronID_HEEPV60_cff']
 
 #add them to the VID producer
 for idmod in my_id_modules:
     setupAllVIDIdsInModule(process,idmod,setupVIDElectronSelection)
-
 
 #
 # Configure the ntupler module
@@ -96,9 +97,8 @@ process.ntupler = cms.EDAnalyzer('SimpleElectronNtupler',
                                  #
                                  # Common to all formats objects
                                  #
-                                 isMC     = cms.untracked.bool(False),
-				 isSIG    = cms.untracked.bool(False),
-				 isNLO    = cms.untracked.bool(False),
+                                 isMC     = cms.untracked.bool(True),
+				 isSIG    = cms.untracked.bool(True),
 				 trigger  = cms.InputTag("TriggerResults::HLT"),
 				 prescale = cms.InputTag("patTrigger"),
 				 #pileup   = cms.InputTag("addPileupInfo"),
@@ -117,6 +117,7 @@ process.ntupler = cms.EDAnalyzer('SimpleElectronNtupler',
                                  #
                                  muonsMiniAOD    = cms.InputTag("slimmedMuons"),
 				 electronsMiniAOD    = cms.InputTag("slimmedElectrons"),
+				 photonsMiniAOD      = cms.InputTag("slimmedPhotons"),
 				 metsMiniAOD         = cms.InputTag("slimmedMETs"),
                                  genParticlesMiniAOD = cms.InputTag("prunedGenParticles"),
                                  verticesMiniAOD     = cms.InputTag("offlineSlimmedPrimaryVertices"),
@@ -128,6 +129,9 @@ process.ntupler = cms.EDAnalyzer('SimpleElectronNtupler',
                                  eleLooseIdMap = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Spring15-25ns-V1-standalone-loose"),
                                  eleMediumIdMap = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Spring15-25ns-V1-standalone-medium"),
                                  eleTightIdMap = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Spring15-25ns-V1-standalone-tight"),
+				 phoLooseIdMap = cms.InputTag("egmPhotonIDs:cutBasedPhotonID-Spring15-25ns-V1-standalone-loose"),
+                                 phoMediumIdMap = cms.InputTag("egmPhotonIDs:cutBasedPhotonID-Spring15-25ns-V1-standalone-medium"),
+                                 phoTightIdMap = cms.InputTag("egmPhotonIDs:cutBasedPhotonID-Spring15-25ns-V1-standalone-tight"),
 				 #
                                  # ValueMaps with MVA results
                                  #
@@ -146,10 +150,10 @@ process.primaryVertexFilter  = cms.EDFilter("VertexSelector",
       )
 
 process.TFileService = cms.Service("TFileService",
-                                   #fileName = cms.string('crosscheck.root')
-				   fileName = cms.string('SinglePhoton_Run2015D_v3_miniAODv2.root')
+                                   fileName = cms.string('DYJetsToLL_M-500to700.root')
+				   #fileName = cms.string('SingleElectron_Run2015D_v3.root')
                                    )
 
 
 process.p = cms.Path(process.egmGsfElectronIDSequence * process.primaryVertexFilter * process.ntupler)
-#process.p = cms.Path(process.egmGsfElectronIDSequence * process.ntupler)
+#process.p = cms.Path(process.egmPhotonIDSequence * process.ntupler)
