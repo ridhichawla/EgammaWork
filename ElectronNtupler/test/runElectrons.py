@@ -43,8 +43,8 @@ inputFilesMiniAOD = cms.untracked.vstring(
     #'/store/data/Run2015D/DoubleEG/MINIAOD/05Oct2015-v1/50000/0014E86F-656F-E511-9D3F-002618943831.root'
     #'/store/data/Run2015D/DoubleEG/MINIAOD/PromptReco-v4/000/258/159/00000/027612B0-306C-E511-BD47-02163E014496.root'
     
-    '/store/mc/RunIISpring15MiniAODv2/DYJetsToLL_M-500to700_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/60000/C057FAA9-456C-E511-BA7D-0025905C42FE.root'
-    #'/store/mc/RunIISpring15MiniAODv2/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/50000/041705A6-6F6F-E511-AC9C-001E6757F1D4.root'
+    #'/store/mc/RunIISpring15MiniAODv2/DYJetsToLL_M-500to700_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/60000/C057FAA9-456C-E511-BA7D-0025905C42FE.root'
+    '/store/mc/RunIISpring15MiniAODv2/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/50000/041705A6-6F6F-E511-AC9C-001E6757F1D4.root'
     #'/store/mc/RunIISpring15MiniAODv2/WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/40000/008865AA-596D-E511-92F1-0025905A6110.root'
     #'/store/mc/RunIISpring15MiniAODv2/TT_TuneCUETP8M1_13TeV-powheg-pythia8/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/40000/00087FEB-236E-E511-9ACB-003048FF86CA.root'
     
@@ -150,8 +150,8 @@ process.primaryVertexFilter  = cms.EDFilter("VertexSelector",
       )
 
 process.TFileService = cms.Service("TFileService",
-                                   fileName = cms.string('DYJetsToLL_M-500to700.root')
-				   #fileName = cms.string('SingleElectron_Run2015D_v3.root')
+                                   fileName = cms.string('DY_check.root')
+				   #fileName = cms.string('SingleElectron_Run2015D_v4.root')
                                    )
 
 

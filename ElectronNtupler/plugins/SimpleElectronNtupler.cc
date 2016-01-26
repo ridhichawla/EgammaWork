@@ -85,7 +85,7 @@ Implementation:
 #include "PhysicsTools/Utilities/interface/LumiReWeighting.h"
 #include "DataFormats/PatCandidates/interface/MET.h"
 
-#include "/afs/cern.ch/work/r/rchawla/private/Analysis_ee_13TeV/CMSSW_7_4_15/src/EgammaWork/ElectronNtupler/plugins/utils.h"
+#include "/afs/cern.ch/work/r/rchawla/public/utils.h"
 
 //
 // class declaration
@@ -167,9 +167,11 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     Int_t nPU_;        // generated pile-up
     Int_t nPV_;        // number of reconsrtucted primary vertices
     Float_t rho_;      // the rho variable
+    //Double_t PUWeight_;
 
     // Trigger
-    std::string string_singleEle;
+    std::string string_singleEle23;
+    std::string string_singleEle27;
     std::string string_singleMuon;
     std::string string_doubleEle;
 
@@ -178,21 +180,24 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     std::string string_emu_23_8;
 
     std::vector<std::string> hlNames_;
-    std::vector<std::string> single_electron_triggers_in_run;
+    std::vector<std::string> single_electron_23_triggers_in_run;
+    std::vector<std::string> single_electron_27_triggers_in_run;
     std::vector<std::string> single_muon_triggers_in_run;
     std::vector<std::string> double_electron_triggers_in_run;
     std::vector<std::string> double_emu_17_8_triggers_in_run;
     std::vector<std::string> double_emu_12_17_triggers_in_run;
     std::vector<std::string> double_emu_23_8_triggers_in_run;
 
-    bool singleEle;
+    bool single_Ele23;
+    bool single_Ele27;
     bool singleMuon;
     bool doubleElectron;
     bool doubleEMu_17_8;
     bool doubleEMu_12_17;
     bool doubleEMu_23_8;
 
-    std::vector<int> idx_singleEle;
+    std::vector<int> idx_singleEle23;
+    std::vector<int> idx_singleEle27;
     std::vector<int> idx_singleMuon;
     std::vector<int> idx_doubleElectron;
     std::vector<int> idx_doubleEMu_17_8;
@@ -347,6 +352,116 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     //std::vector<Int_t> phoPassTightId_;
 
     double DeltaR(const pat::Electron& e, std::vector<pat::TriggerObjectStandAlone> object);
+
+    /*std::vector<double> pileupMC_;
+    std::vector<double> pileupData_;
+    std::vector<double> pileupWeights_;
+
+    double Spring15MC[50] = {4.8551E-07,
+      1.74806E-06,
+      3.30868E-06,
+      1.62972E-05,
+      4.95667E-05,
+      0.000606966,
+      0.003307249,
+      0.010340741,
+      0.022852296,
+      0.041948781,
+      0.058609363,
+      0.067475755,
+      0.072817826,
+      0.075931405,
+      0.076782504,
+      0.076202319,
+      0.074502547,
+      0.072355135,
+      0.069642102,
+      0.064920999,
+      0.05725576,
+      0.047289348,
+      0.036528446,
+      0.026376131,
+      0.017806872,
+      0.011249422,
+      0.006643385,
+      0.003662904,
+      0.001899681,
+      0.00095614,
+      0.00050028,
+      0.000297353,
+      0.000208717,
+      0.000165856,
+      0.000139974,
+      0.000120481,
+      0.000103826,
+      8.88868E-05,
+      7.53323E-05,
+      6.30863E-05,
+      5.21356E-05,
+      4.24754E-05,
+      3.40876E-05,
+      2.69282E-05,
+      2.09267E-05,
+      1.5989E-05,
+      4.8551E-06,
+      2.42755E-06,
+      4.8551E-07,
+      2.42755E-07
+
+    };
+
+    double dataPU2015[50] = {
+      5.33435e-05,
+      0.00025208,
+      0.000335,
+      0.000489554,
+      0.000799284,
+      0.00170226,
+      0.00506565,
+      0.0196509,
+      0.0626844,
+      0.123218,
+      0.167486,
+      0.180379,
+      0.164132,
+      0.124863,
+      0.0780303,
+      0.0400736,
+      0.0174304,
+      0.00706797,
+      0.00318428,
+      0.0016818,
+      0.000869864,
+      0.000375218,
+      0.000128204,
+      3.53867e-05,
+      8.60652e-06,
+      2.15921e-06,
+      6.37069e-07,
+      2.19252e-07,
+      8.21039e-08,
+      3.18464e-08,
+      1.23916e-08,
+      4.72625e-09,
+      1.74029e-09,
+      6.1328e-10,
+      2.05907e-10,
+      6.57236e-11,
+      1.99243e-11,
+      5.73417e-12,
+      1.56643e-12,
+      4.0614e-13,
+      9.99435e-14,
+      2.33424e-14,
+      5.17428e-15,
+      1.0886e-15,
+      2.17375e-16,
+      4.11959e-17,
+      7.41263e-18,
+      1.26417e-18,
+      2.05164e-19,
+      3.7169e-20
+    };*/
 };
 
 SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
@@ -360,7 +475,8 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   //phoTightIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("phoTightIdMap")))
 {
 
-  string_singleEle      = "HLT_Ele23_WPLoose_Gsf_v";
+  string_singleEle23    = "HLT_Ele23_WPLoose_Gsf_v";
+  string_singleEle27    = "HLT_Ele27_WP85_Gsf_v";
   string_singleMuon     = "HLT_IsoMu20_v";
   string_doubleEle      = "HLT_Ele17_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v";
   string_emu_17_8       = "HLT_Mu8_TrkIsoVVL_Ele17_CaloIdL_TrackIdL_IsoVL_v";
@@ -379,12 +495,6 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
 
   misMC            = iConfig.getUntrackedParameter<bool>("isMC");
   misSIG           = iConfig.getUntrackedParameter<bool>("isSIG");
-
-  // initialize 1-D reweighting
-  /*LumiWeights_ = edm::LumiReWeighting("MyDataPileupHistogram.root", 
-    "MyDataPileupHistogram.root", 
-    "pileup", 
-    "pileup");*/
 
   // Prepare tokens for all input collections and objects
 
@@ -480,8 +590,10 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronTree_->Branch("nPU"        ,  &nPU_     , "nPU/I");
   electronTree_->Branch("nPUTrue"    ,  &nPUTrue_ , "nPUTrue/I");
   electronTree_->Branch("rho"        ,  &rho_ , "rho/F");
+  //electronTree_->Branch("PUWeight", &PUWeight_, "PUWeight/D");
 
-  electronTree_->Branch("singleEle"     ,  &singleEle    );
+  electronTree_->Branch("single_Ele23"     ,  &single_Ele23    );
+  electronTree_->Branch("single_Ele27"     ,  &single_Ele27    );
   electronTree_->Branch("singleMuon"    ,  &singleMuon   );
   electronTree_->Branch("doubleElectron"    ,  &doubleElectron    );
   electronTree_->Branch("doubleEMu_17_8"    ,  &doubleEMu_17_8    );
@@ -623,12 +735,44 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   //cout<<"1"<<endl;
 
   if(misMC){
+
     Handle<GenEventInfoProduct> genEvtInfo;
     iEvent.getByLabel("generator", genEvtInfo);
 
     if (genEvtInfo.isValid()) {
       theWeight = genEvtInfo->weight();
     }
+  }
+
+  /*if(misMC){}
+   PUWeight_ = 1.;
+    
+    for(int i=0; i<50; i++) {
+      pileupData_.push_back(dataPU2015[i]);
+      pileupMC_.push_back(Spring15MC[i]);
+    }
+
+    auto scl  = std::accumulate(pileupMC_.begin(), pileupMC_.end(), 0.)/std::accumulate(pileupData_.begin(), pileupData_.end(),0.);
+    for(size_t ib = 0; ib<pileupData_.size(); ++ib) {
+      pileupWeights_.push_back(pileupData_[ib] * scl / pileupMC_[ib]);
+      //std::cout << pileupWeights_.back() << std::endl;
+    }
+    */
+  
+  // Get Pileup info
+
+  if(misMC){
+    Handle<edm::View<PileupSummaryInfo> > pileupHandle;
+    iEvent.getByToken(pileupToken_, pileupHandle);
+    for( auto & puInfoElement : *pileupHandle){
+      if( puInfoElement.getBunchCrossing() == 0 ){
+	nPU_    = puInfoElement.getPU_NumInteractions();
+	nPUTrue_= puInfoElement.getTrueNumInteractions();
+	// cout << "Pile up = " << nPUTrue_ << endl;
+	// cout << "Pile-Up Weight =  " << pileupWeights_.at(nPUTrue_+1) << std::endl;
+      }
+    }
+    //PUWeight_ = pileupWeights_.at(nPUTrue_);
   }
 
   // Get Triggers
@@ -824,14 +968,16 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   for (int itrigger=0; itrigger<ntriggers; itrigger++)
   {
     std::string hltname(triggerNames.triggerName(itrigger));
-    size_t found_singleEle   = hltname.find(string_singleEle);
+    size_t found_singleEle23   = hltname.find(string_singleEle23);
+    size_t found_singleEle27   = hltname.find(string_singleEle27);
     size_t found_singleMuon = hltname.find(string_singleMuon);
     size_t found_doubleEle = hltname.find(string_doubleEle);
     size_t found_emu_17_8 = hltname.find(string_emu_17_8);
     size_t found_emu_12_17 = hltname.find(string_emu_12_17);
     size_t found_emu_23_8 = hltname.find(string_emu_23_8);
 
-    if(found_singleEle !=string::npos) single_electron_triggers_in_run.push_back(hltname);
+    if(found_singleEle23 !=string::npos) single_electron_23_triggers_in_run.push_back(hltname);
+    if(found_singleEle27 !=string::npos) single_electron_27_triggers_in_run.push_back(hltname);
     if(found_singleMuon !=string::npos) single_muon_triggers_in_run.push_back(hltname);
     if(found_doubleEle !=string::npos) double_electron_triggers_in_run.push_back(hltname);
     if(found_emu_17_8 !=string::npos) double_emu_17_8_triggers_in_run.push_back(hltname);
@@ -840,13 +986,22 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   }
 
-  for ( int itrigger = 0 ; itrigger < (int)single_electron_triggers_in_run.size(); itrigger++){
-    idx_singleEle.push_back(triggerNames.triggerIndex(single_electron_triggers_in_run[itrigger]));
-    if(idx_singleEle.size()>0)
-      if(idx_singleEle[itrigger] < hsize){
-	singleEle = (triggerHandle->accept(idx_singleEle[itrigger]));
+  for ( int itrigger = 0 ; itrigger < (int)single_electron_23_triggers_in_run.size(); itrigger++){
+    idx_singleEle23.push_back(triggerNames.triggerIndex(single_electron_23_triggers_in_run[itrigger]));
+    if(idx_singleEle23.size()>0)
+      if(idx_singleEle23[itrigger] < hsize){
+	single_Ele23 = (triggerHandle->accept(idx_singleEle23[itrigger]));
       }
   }
+
+  for ( int itrigger = 0 ; itrigger < (int)single_electron_27_triggers_in_run.size(); itrigger++){
+    idx_singleEle27.push_back(triggerNames.triggerIndex(single_electron_27_triggers_in_run[itrigger]));
+    if(idx_singleEle27.size()>0)
+      if(idx_singleEle27[itrigger] < hsize){
+	single_Ele27 = (triggerHandle->accept(idx_singleEle27[itrigger]));
+      }
+  }
+
 
   for ( int itrigger = 0 ; itrigger < (int)double_electron_triggers_in_run.size(); itrigger++){
     idx_doubleElectron.push_back(triggerNames.triggerIndex(double_electron_triggers_in_run[itrigger]));
@@ -887,21 +1042,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	doubleEMu_23_8 = (triggerHandle->accept(idx_doubleEMu_23_8[itrigger]));
       }
   }
-
-  // Get Pileup info
-  if(misMC){
-    Handle<edm::View<PileupSummaryInfo> > pileupHandle;
-    iEvent.getByToken(pileupToken_, pileupHandle);
-    for( auto & puInfoElement : *pileupHandle){
-      if( puInfoElement.getBunchCrossing() == 0 ){
-	nPU_    = puInfoElement.getPU_NumInteractions();
-	nPUTrue_= puInfoElement.getTrueNumInteractions();
-      }
-    }
-  }
-
-  //double MyWeight = LumiWeights_.weight(nPUTrue_);
-  //cout<<"MyWeight: "<<MyWeight<<endl;
 
   // Get rho value
   edm::Handle< double > rhoH;
@@ -1006,7 +1146,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   } // isMC && isSIG
 
   //cout<<"2"<<endl;
-  
+
   // Get PV
   edm::Handle<reco::VertexCollection> vertices;
   if( isAOD )
@@ -1051,7 +1191,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   //cout<<"Event: "<<iEvent.id().event()<<"   "<<"Electrons: "<<electrons->size()<<endl;//"      trigger: "<<doubleElectron<<endl;
 
   //cout<<"3"<<endl;
-  
+
   // Loop over electrons
   for (size_t i = 0; i < electrons->size(); ++i){
     const auto el = electrons->ptrAt(i);
@@ -1153,7 +1293,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   }
 
   //cout<<"4"<<endl;
-  
+
   edm::Handle<edm::View<pat::Muon> > muons;
   iEvent.getByToken(muonsMiniAODToken_,muons);
 
@@ -1216,14 +1356,14 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   iEvent.getByToken(photonsMiniAODToken_,photons);
 
   /*edm::Handle<edm::ValueMap<bool> > pho_loose_id_decisions;
-  edm::Handle<edm::ValueMap<bool> > pho_medium_id_decisions;
-  edm::Handle<edm::ValueMap<bool> > pho_tight_id_decisions;
-  iEvent.getByToken(phoLooseIdMapToken_ ,pho_loose_id_decisions);
-  iEvent.getByToken(phoMediumIdMapToken_,pho_medium_id_decisions);
-  iEvent.getByToken(phoTightIdMapToken_ ,pho_tight_id_decisions);*/
+    edm::Handle<edm::ValueMap<bool> > pho_medium_id_decisions;
+    edm::Handle<edm::ValueMap<bool> > pho_tight_id_decisions;
+    iEvent.getByToken(phoLooseIdMapToken_ ,pho_loose_id_decisions);
+    iEvent.getByToken(phoMediumIdMapToken_,pho_medium_id_decisions);
+    iEvent.getByToken(phoTightIdMapToken_ ,pho_tight_id_decisions);*/
 
   //cout<<"5"<<endl;
-  
+
   nPhotons_ = 0;
 
   // Loop over photons
@@ -1240,11 +1380,11 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       phiPhoton_ .push_back(pho->superCluster()->phi());
 
       /*bool isPhoPassLoose  = (*pho_loose_id_decisions)[pho];
-      bool isPhoPassMedium = (*pho_medium_id_decisions)[pho];
-      bool isPhoPassTight  = (*pho_tight_id_decisions)[pho];
-      phoPassLooseId_.push_back ( (int)isPhoPassLoose );
-      phoPassMediumId_.push_back( (int)isPhoPassMedium);
-      phoPassTightId_.push_back ( (int)isPhoPassTight );*/
+	bool isPhoPassMedium = (*pho_medium_id_decisions)[pho];
+	bool isPhoPassTight  = (*pho_tight_id_decisions)[pho];
+	phoPassLooseId_.push_back ( (int)isPhoPassLoose );
+	phoPassMediumId_.push_back( (int)isPhoPassMedium);
+	phoPassTightId_.push_back ( (int)isPhoPassTight );*/
 
     }
   }
@@ -1254,15 +1394,22 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   // Save this electron's info
   electronTree_->Fill();
 
+  //PUWeight_ = 1.;
+  //pileupWeights_.clear();
+  //pileupData_.clear();
+  //pileupMC_.clear();
+
   hlNames_.clear();
-  single_electron_triggers_in_run.clear();
+  single_electron_23_triggers_in_run.clear();
+  single_electron_27_triggers_in_run.clear();
   single_muon_triggers_in_run.clear();
   double_electron_triggers_in_run.clear();
   double_emu_17_8_triggers_in_run.clear();
   double_emu_12_17_triggers_in_run.clear();
   double_emu_23_8_triggers_in_run.clear();
 
-  idx_singleEle.clear();
+  idx_singleEle23.clear();
+  idx_singleEle27.clear();
   idx_singleMuon.clear();
   idx_doubleElectron.clear();
   idx_doubleEMu_17_8.clear();
