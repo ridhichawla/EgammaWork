@@ -134,8 +134,7 @@ void unfold_RMatrix::Loop()
     
     if(!tauFlag){
       if(nEle>=2) {
-	if(doubleElectron) {
-	  if(doubleElectron == 0) cout<<"Trigger not applied correctly"<<endl;
+	if(single_Ele27) {
 
 	  for(int k=0;k<nEle;k++){
 
