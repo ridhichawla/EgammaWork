@@ -59,11 +59,11 @@ void unfold_RMatrix::Loop()
   vector <double> recoPost_Pt; vector <double> recoPost_Eta; vector <double> recoPost_Enr; vector <double> recoPost_Phi;
   vector <double> genPost_Pt; vector <double> genPost_Eta; vector <double> genPost_Enr; vector <double> genPost_Phi;
 
-  Double_t xbins[46] = {15,20,25,30,35,40,45,50,55,60,64,68,72,76,81,86,91,96,101,106,110,115,120,126,133,141,150,160,171,185,200,220,243,273,320,380,440,510,600,700,830,1000,1200,1500,2000,3000};
+  Double_t xbins[48] = {0,10,15,20,25,30,35,40,45,50,55,60,64,68,72,76,81,86,91,96,101,106,110,115,120,126,133,141,150,160,171,185,200,220,243,273,320,380,440,510,600,700,830,1000,1200,1500,2000,3000};
 
-  TH1D *genPostFSR_Mass = new TH1D("genPostFSR_Mass", "genPostFSR_Mass", 45, xbins);
-  TH2D *responsePost = new TH2D("RM_postFSR", "RM_postFSR", 45, xbins, 45, xbins);
-  TH1D *reco_ZMass = new TH1D("ZMass", "ZMass", 45, xbins);
+  TH1D *genPostFSR_Mass = new TH1D("genPostFSR_Mass", "genPostFSR_Mass", 47, xbins);
+  TH2D *responsePost = new TH2D("RM_postFSR", "RM_postFSR", 47, xbins, 47, xbins);
+  TH1D *reco_ZMass = new TH1D("ZMass", "ZMass", 47, xbins);
 
   responsePost->Sumw2(); genPostFSR_Mass->Sumw2(); reco_ZMass->Sumw2();
 
@@ -139,11 +139,11 @@ void unfold_RMatrix::Loop()
 
 	  for(int k=0;k<nEle;k++){
 
-	    if(passMediumId->at(index[k]) == 1 && eleEcalDrivenSeed->at(index[k]) == 1){
+	    if(passMediumId->at(index[k]) == 1){ // && eleEcalDrivenSeed->at(index[k]) == 1)
 	      if(fabs(eta->at(index[k])) < 2.5 && !(fabs(etaSC->at(index[k])) > 1.4442 && fabs(etaSC->at(index[k])) < 1.566)){
 
 		if(passMediumId->at(index[k]) == 0) cout<<"Wrong ID: "<<endl;
-		if(eleEcalDrivenSeed->at(index[k]) == 0) cout<<"Not ECAL Driven: "<<endl;
+		//if(eleEcalDrivenSeed->at(index[k]) == 0) cout<<"Not ECAL Driven: "<<endl;
 
 		good_elec = good_elec + 1;
 
@@ -165,7 +165,7 @@ void unfold_RMatrix::Loop()
     if(good_elec==2){
       if(newelePt.at(0) < newelePt.at(1)) cout<<"event: "<<jentry<<"   "<<"Sorting not proper: "<<"   "<<"reco pt lead: "<<newelePt.at(0)<<"   "<<"reco pt sublead: "<<newelePt.at(1)<<endl;
 
-      if(newelePt.at(0) > 20. && newelePt.at(1) > 10.){
+      if(newelePt.at(0) > 30. && newelePt.at(1) > 10.){
 
 	ele1.SetPtEtaPhiE(newelePt.at(0),neweleEta.at(0),newelePhi.at(0),neweleEnr.at(0));
 	ele2.SetPtEtaPhiE(newelePt.at(1),neweleEta.at(1),newelePhi.at(1),neweleEnr.at(1));
@@ -174,6 +174,7 @@ void unfold_RMatrix::Loop()
 	Z_Mass = dielectron.M();
 
 	reco_ZMass->Fill(Z_Mass,theWeight);
+	//reco_ZMass->SetBinContent(45,1);
 
       }
     }
@@ -199,7 +200,7 @@ void unfold_RMatrix::Loop()
 
       if(newgPost_Pt.at(0) < newgPost_Pt.at(1)) cout<<"entry: "<<jentry<<"   "<<"Sorting not done properly"<<"   "<<"new gen post pt lead: "<<newgPost_Pt.at(0)<<"   "<<"new gen post pt sublead: "<<newgPost_Pt.at(1)<<endl;
 
-      if(newgPost_Pt.at(0) > 20. && newgPost_Pt.at(1) > 10.){
+      if(newgPost_Pt.at(0) > 30. && newgPost_Pt.at(1) > 10.){
 
 	gPost1.SetPtEtaPhiE(newgPost_Pt.at(0),newgPost_Eta.at(0),newgPost_Phi.at(0),newgPost_Enr.at(0));
 	gPost2.SetPtEtaPhiE(newgPost_Pt.at(1),newgPost_Eta.at(1),newgPost_Phi.at(1),newgPost_Enr.at(1));
@@ -207,6 +208,7 @@ void unfold_RMatrix::Loop()
 	di_gPost=gPost1+gPost2;
 	ZMass_di_gPost=di_gPost.M();
 	genPostFSR_Mass->Fill(ZMass_di_gPost,theWeight);
+	//genPostFSR_Mass->SetBinContent(45,1);
 
       }
     }
