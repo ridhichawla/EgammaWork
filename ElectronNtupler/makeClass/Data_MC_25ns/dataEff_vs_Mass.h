@@ -1,12 +1,12 @@
 //////////////////////////////////////////////////////////
 // This class has been automatically generated on
-// Thu Jan 28 11:58:29 2016 by ROOT version 6.02/05
+// Tue Jan 26 07:31:57 2016 by ROOT version 6.02/05
 // from TTree ElectronTree/Electron data
-// found on file: /tmp/rchawla/WJetsToLNu_miniAODv2.root
+// found on file: /tmp/rchawla/SingleElectron_Run2015D.root
 //////////////////////////////////////////////////////////
 
-#ifndef mc13TeV_h
-#define mc13TeV_h
+#ifndef dataEff_vs_Mass_h
+#define dataEff_vs_Mass_h
 
 #include <TROOT.h>
 #include <TChain.h>
@@ -17,9 +17,8 @@
 #include "vector"
 #include "vector"
 #include "vector"
-#include "TClonesArray.h"
 
-class mc13TeV {
+class dataEff_vs_Mass {
 public :
    TTree          *fChain;   //!pointer to the analyzed TTree or TChain
    Int_t           fCurrent; //!current Tree number in a TChain
@@ -37,16 +36,12 @@ public :
    Int_t           nPU;
    Int_t           nPUTrue;
    Float_t         rho;
-   Bool_t          single_Ele23;
-   Bool_t          single_Ele27;
+   Bool_t          singleEle;
    Bool_t          singleMuon;
    Bool_t          doubleElectron;
    Bool_t          doubleEMu_17_8;
    Bool_t          doubleEMu_12_17;
    Bool_t          doubleEMu_23_8;
-   vector<double>  *et_Photon;
-   Int_t           singlePhoton;
-   Int_t           prescalePhoton;
    vector<double>  *pt_leg1;
    vector<double>  *eta_leg1;
    vector<double>  *phi_leg1;
@@ -62,14 +57,22 @@ public :
    vector<float>   *gen_phiTau;
    Int_t           nEle;
    Int_t           nGenEle;
-   vector<float>   *gen_postFSR_ene;
-   vector<float>   *gen_postFSR_px;
-   vector<float>   *gen_postFSR_py;
-   vector<float>   *gen_postFSR_pz;
-   vector<float>   *gen_postFSR_pt;
-   vector<float>   *gen_postFSR_eta;
-   vector<float>   *gen_postFSR_rap;
-   vector<float>   *gen_postFSR_phi;
+   vector<float>   *gPre_energy;
+   vector<float>   *gPre_px;
+   vector<float>   *gPre_py;
+   vector<float>   *gPre_pz;
+   vector<float>   *gPre_pt;
+   vector<float>   *gPre_eta;
+   vector<float>   *gPre_rap;
+   vector<float>   *gPre_phi;
+   vector<float>   *gPost_energy;
+   vector<float>   *gPost_px;
+   vector<float>   *gPost_py;
+   vector<float>   *gPost_pz;
+   vector<float>   *gPost_pt;
+   vector<float>   *gPost_eta;
+   vector<float>   *gPost_rap;
+   vector<float>   *gPost_phi;
    vector<float>   *pt;
    vector<float>   *eta;
    vector<float>   *rap;
@@ -111,14 +114,11 @@ public :
    vector<int>     *passMediumId;
    vector<int>     *passTightId;
    vector<int>     *eleEcalDrivenSeed;
-   vector<float>   *eleInBarrel;
-   vector<float>   *eleInEndcap;
    vector<int>     *isGLBmuon;
    vector<int>     *isPFmuon;
    Int_t           nMuons;
    vector<bool>    *isLoose;
    vector<bool>    *isTight;
-   vector<bool>    *isHighPt;
    vector<double>  *ptMuon;
    vector<double>  *etaMuon;
    vector<double>  *phiMuon;
@@ -129,15 +129,6 @@ public :
    vector<double>  *isoGammaPfR04Muon;
    vector<double>  *isoChargedFromPUMuon;
    vector<double>  *isoPFMuon;
-   vector<double>  *isoTrkMuon;
-   vector<double>  *metPt;
-   vector<double>  *metPhi;
-   vector<double>  *metSumEt;
-   Int_t           nPhotons;
-   vector<float>   *ptPhoton;
-   vector<float>   *etaPhoton;
-   vector<float>   *phiPhoton;
-   TClonesArray    *gen_preFSR;
 
    // List of branches
    TBranch        *b_RunNo;   //!
@@ -150,16 +141,12 @@ public :
    TBranch        *b_nPU;   //!
    TBranch        *b_nPUTrue;   //!
    TBranch        *b_rho;   //!
-   TBranch        *b_single_Ele23;   //!
-   TBranch        *b_single_Ele27;   //!
+   TBranch        *b_singleEle;   //!
    TBranch        *b_singleMuon;   //!
    TBranch        *b_doubleElectron;   //!
    TBranch        *b_doubleEMu_17_8;   //!
    TBranch        *b_doubleEMu_12_17;   //!
    TBranch        *b_doubleEMu_23_8;   //!
-   TBranch        *b_et_Photon;   //!
-   TBranch        *b_singlePhoton;   //!
-   TBranch        *b_prescalePhoton;   //!
    TBranch        *b_pt_leg1;   //!
    TBranch        *b_eta_leg1;   //!
    TBranch        *b_phi_leg1;   //!
@@ -175,14 +162,22 @@ public :
    TBranch        *b_gen_phiTau;   //!
    TBranch        *b_nEle;   //!
    TBranch        *b_nGenEle;   //!
-   TBranch        *b_gen_postFSR_ene;   //!
-   TBranch        *b_gen_postFSR_px;   //!
-   TBranch        *b_gen_postFSR_py;   //!
-   TBranch        *b_gen_postFSR_pz;   //!
-   TBranch        *b_gen_postFSR_pt;   //!
-   TBranch        *b_gen_postFSR_eta;   //!
-   TBranch        *b_gen_postFSR_rap;   //!
-   TBranch        *b_gen_postFSR_phi;   //!
+   TBranch        *b_gPre_energy;   //!
+   TBranch        *b_gPre_px;   //!
+   TBranch        *b_gPre_py;   //!
+   TBranch        *b_gPre_pz;   //!
+   TBranch        *b_gPre_pt;   //!
+   TBranch        *b_gPre_eta;   //!
+   TBranch        *b_gPre_rap;   //!
+   TBranch        *b_gPre_phi;   //!
+   TBranch        *b_gPost_energy;   //!
+   TBranch        *b_gPost_px;   //!
+   TBranch        *b_gPost_py;   //!
+   TBranch        *b_gPost_pz;   //!
+   TBranch        *b_gPost_pt;   //!
+   TBranch        *b_gPost_eta;   //!
+   TBranch        *b_gPost_rap;   //!
+   TBranch        *b_gPost_phi;   //!
    TBranch        *b_pt;   //!
    TBranch        *b_eta;   //!
    TBranch        *b_rap;   //!
@@ -224,14 +219,11 @@ public :
    TBranch        *b_passMediumId;   //!
    TBranch        *b_passTightId;   //!
    TBranch        *b_eleEcalDrivenSeed;   //!
-   TBranch        *b_eleInBarrel;   //!
-   TBranch        *b_eleInEndcap;   //!
    TBranch        *b_isGLBmuon;   //!
    TBranch        *b_isPFmuon;   //!
    TBranch        *b_nMuons;   //!
    TBranch        *b_isLoose;   //!
    TBranch        *b_isTight;   //!
-   TBranch        *b_isHighPt;   //!
    TBranch        *b_ptMuon;   //!
    TBranch        *b_etaMuon;   //!
    TBranch        *b_phiMuon;   //!
@@ -242,18 +234,9 @@ public :
    TBranch        *b_isoGammaPfR04Muon;   //!
    TBranch        *b_isoChargedFromPUMuon;   //!
    TBranch        *b_isoPFMuon;   //!
-   TBranch        *b_isoTrkMuon;   //!
-   TBranch        *b_metPt;   //!
-   TBranch        *b_metPhi;   //!
-   TBranch        *b_metSumEt;   //!
-   TBranch        *b_nPhotons;   //!
-   TBranch        *b_ptPhoton;   //!
-   TBranch        *b_etaPhoton;   //!
-   TBranch        *b_phiPhoton;   //!
-   TBranch        *b_gen_preFSR;   //!
 
-   mc13TeV(TTree *tree=0);
-   virtual ~mc13TeV();
+   dataEff_vs_Mass(TTree *tree=0);
+   virtual ~dataEff_vs_Mass();
    virtual Int_t    Cut(Long64_t entry);
    virtual Int_t    GetEntry(Long64_t entry);
    virtual Long64_t LoadTree(Long64_t entry);
@@ -265,36 +248,36 @@ public :
 
 #endif
 
-#ifdef mc13TeV_cxx
-mc13TeV::mc13TeV(TTree *tree) : fChain(0) 
+#ifdef dataEff_vs_Mass_cxx
+dataEff_vs_Mass::dataEff_vs_Mass(TTree *tree) : fChain(0) 
 {
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
    if (tree == 0) {
-      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("/tmp/rchawla/DYJetsToLL_M-10to50_miniAODv2.root");
+      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("/tmp/rchawla/SingleElectron_Run2015D.root");
       if (!f || !f->IsOpen()) {
-         f = new TFile("/tmp/rchawla/DYJetsToLL_M-10to50_miniAODv2.root");
+         f = new TFile("/tmp/rchawla/SingleElectron_Run2015D.root");
       }
-      TDirectory * dir = (TDirectory*)f->Get("ntupler;1");
+      TDirectory * dir = (TDirectory*)f->Get("/tmp/rchawla/SingleElectron_Run2015D.root:/ntupler");
       dir->GetObject("ElectronTree",tree);
 
    }
    Init(tree);
 }
 
-mc13TeV::~mc13TeV()
+dataEff_vs_Mass::~dataEff_vs_Mass()
 {
    if (!fChain) return;
    delete fChain->GetCurrentFile();
 }
 
-Int_t mc13TeV::GetEntry(Long64_t entry)
+Int_t dataEff_vs_Mass::GetEntry(Long64_t entry)
 {
 // Read contents of entry.
    if (!fChain) return 0;
    return fChain->GetEntry(entry);
 }
-Long64_t mc13TeV::LoadTree(Long64_t entry)
+Long64_t dataEff_vs_Mass::LoadTree(Long64_t entry)
 {
 // Set the environment to read one entry
    if (!fChain) return -5;
@@ -307,7 +290,7 @@ Long64_t mc13TeV::LoadTree(Long64_t entry)
    return centry;
 }
 
-void mc13TeV::Init(TTree *tree)
+void dataEff_vs_Mass::Init(TTree *tree)
 {
    // The Init() function is called when the selector needs to initialize
    // a new tree or chain. Typically here the branch addresses and branch
@@ -318,7 +301,6 @@ void mc13TeV::Init(TTree *tree)
    // (once per file to be processed).
 
    // Set object pointer
-   et_Photon = 0;
    pt_leg1 = 0;
    eta_leg1 = 0;
    phi_leg1 = 0;
@@ -331,14 +313,22 @@ void mc13TeV::Init(TTree *tree)
    gen_ptTau = 0;
    gen_etaTau = 0;
    gen_phiTau = 0;
-   gen_postFSR_ene = 0;
-   gen_postFSR_px = 0;
-   gen_postFSR_py = 0;
-   gen_postFSR_pz = 0;
-   gen_postFSR_pt = 0;
-   gen_postFSR_eta = 0;
-   gen_postFSR_rap = 0;
-   gen_postFSR_phi = 0;
+   gPre_energy = 0;
+   gPre_px = 0;
+   gPre_py = 0;
+   gPre_pz = 0;
+   gPre_pt = 0;
+   gPre_eta = 0;
+   gPre_rap = 0;
+   gPre_phi = 0;
+   gPost_energy = 0;
+   gPost_px = 0;
+   gPost_py = 0;
+   gPost_pz = 0;
+   gPost_pt = 0;
+   gPost_eta = 0;
+   gPost_rap = 0;
+   gPost_phi = 0;
    pt = 0;
    eta = 0;
    rap = 0;
@@ -380,13 +370,10 @@ void mc13TeV::Init(TTree *tree)
    passMediumId = 0;
    passTightId = 0;
    eleEcalDrivenSeed = 0;
-   eleInBarrel = 0;
-   eleInEndcap = 0;
    isGLBmuon = 0;
    isPFmuon = 0;
    isLoose = 0;
    isTight = 0;
-   isHighPt = 0;
    ptMuon = 0;
    etaMuon = 0;
    phiMuon = 0;
@@ -397,14 +384,6 @@ void mc13TeV::Init(TTree *tree)
    isoGammaPfR04Muon = 0;
    isoChargedFromPUMuon = 0;
    isoPFMuon = 0;
-   isoTrkMuon = 0;
-   metPt = 0;
-   metPhi = 0;
-   metSumEt = 0;
-   ptPhoton = 0;
-   etaPhoton = 0;
-   phiPhoton = 0;
-   gen_preFSR = 0;
    // Set branch addresses and branch pointers
    if (!tree) return;
    fChain = tree;
@@ -421,16 +400,12 @@ void mc13TeV::Init(TTree *tree)
    fChain->SetBranchAddress("nPU", &nPU, &b_nPU);
    fChain->SetBranchAddress("nPUTrue", &nPUTrue, &b_nPUTrue);
    fChain->SetBranchAddress("rho", &rho, &b_rho);
-   fChain->SetBranchAddress("single_Ele23", &single_Ele23, &b_single_Ele23);
-   fChain->SetBranchAddress("single_Ele27", &single_Ele27, &b_single_Ele27);
+   fChain->SetBranchAddress("singleEle", &singleEle, &b_singleEle);
    fChain->SetBranchAddress("singleMuon", &singleMuon, &b_singleMuon);
    fChain->SetBranchAddress("doubleElectron", &doubleElectron, &b_doubleElectron);
    fChain->SetBranchAddress("doubleEMu_17_8", &doubleEMu_17_8, &b_doubleEMu_17_8);
    fChain->SetBranchAddress("doubleEMu_12_17", &doubleEMu_12_17, &b_doubleEMu_12_17);
    fChain->SetBranchAddress("doubleEMu_23_8", &doubleEMu_23_8, &b_doubleEMu_23_8);
-   fChain->SetBranchAddress("et_Photon", &et_Photon, &b_et_Photon);
-   fChain->SetBranchAddress("singlePhoton", &singlePhoton, &b_singlePhoton);
-   fChain->SetBranchAddress("prescalePhoton", &prescalePhoton, &b_prescalePhoton);
    fChain->SetBranchAddress("pt_leg1", &pt_leg1, &b_pt_leg1);
    fChain->SetBranchAddress("eta_leg1", &eta_leg1, &b_eta_leg1);
    fChain->SetBranchAddress("phi_leg1", &phi_leg1, &b_phi_leg1);
@@ -446,14 +421,22 @@ void mc13TeV::Init(TTree *tree)
    fChain->SetBranchAddress("gen_phiTau", &gen_phiTau, &b_gen_phiTau);
    fChain->SetBranchAddress("nEle", &nEle, &b_nEle);
    fChain->SetBranchAddress("nGenEle", &nGenEle, &b_nGenEle);
-   fChain->SetBranchAddress("gen_postFSR_ene", &gen_postFSR_ene, &b_gen_postFSR_ene);
-   fChain->SetBranchAddress("gen_postFSR_px", &gen_postFSR_px, &b_gen_postFSR_px);
-   fChain->SetBranchAddress("gen_postFSR_py", &gen_postFSR_py, &b_gen_postFSR_py);
-   fChain->SetBranchAddress("gen_postFSR_pz", &gen_postFSR_pz, &b_gen_postFSR_pz);
-   fChain->SetBranchAddress("gen_postFSR_pt", &gen_postFSR_pt, &b_gen_postFSR_pt);
-   fChain->SetBranchAddress("gen_postFSR_eta", &gen_postFSR_eta, &b_gen_postFSR_eta);
-   fChain->SetBranchAddress("gen_postFSR_rap", &gen_postFSR_rap, &b_gen_postFSR_rap);
-   fChain->SetBranchAddress("gen_postFSR_phi", &gen_postFSR_phi, &b_gen_postFSR_phi);
+   fChain->SetBranchAddress("gPre_energy", &gPre_energy, &b_gPre_energy);
+   fChain->SetBranchAddress("gPre_px", &gPre_px, &b_gPre_px);
+   fChain->SetBranchAddress("gPre_py", &gPre_py, &b_gPre_py);
+   fChain->SetBranchAddress("gPre_pz", &gPre_pz, &b_gPre_pz);
+   fChain->SetBranchAddress("gPre_pt", &gPre_pt, &b_gPre_pt);
+   fChain->SetBranchAddress("gPre_eta", &gPre_eta, &b_gPre_eta);
+   fChain->SetBranchAddress("gPre_rap", &gPre_rap, &b_gPre_rap);
+   fChain->SetBranchAddress("gPre_phi", &gPre_phi, &b_gPre_phi);
+   fChain->SetBranchAddress("gPost_energy", &gPost_energy, &b_gPost_energy);
+   fChain->SetBranchAddress("gPost_px", &gPost_px, &b_gPost_px);
+   fChain->SetBranchAddress("gPost_py", &gPost_py, &b_gPost_py);
+   fChain->SetBranchAddress("gPost_pz", &gPost_pz, &b_gPost_pz);
+   fChain->SetBranchAddress("gPost_pt", &gPost_pt, &b_gPost_pt);
+   fChain->SetBranchAddress("gPost_eta", &gPost_eta, &b_gPost_eta);
+   fChain->SetBranchAddress("gPost_rap", &gPost_rap, &b_gPost_rap);
+   fChain->SetBranchAddress("gPost_phi", &gPost_phi, &b_gPost_phi);
    fChain->SetBranchAddress("pt", &pt, &b_pt);
    fChain->SetBranchAddress("eta", &eta, &b_eta);
    fChain->SetBranchAddress("rap", &rap, &b_rap);
@@ -495,14 +478,11 @@ void mc13TeV::Init(TTree *tree)
    fChain->SetBranchAddress("passMediumId", &passMediumId, &b_passMediumId);
    fChain->SetBranchAddress("passTightId", &passTightId, &b_passTightId);
    fChain->SetBranchAddress("eleEcalDrivenSeed", &eleEcalDrivenSeed, &b_eleEcalDrivenSeed);
-   fChain->SetBranchAddress("eleInBarrel", &eleInBarrel, &b_eleInBarrel);
-   fChain->SetBranchAddress("eleInEndcap", &eleInEndcap, &b_eleInEndcap);
    fChain->SetBranchAddress("isGLBmuon", &isGLBmuon, &b_isGLBmuon);
    fChain->SetBranchAddress("isPFmuon", &isPFmuon, &b_isPFmuon);
    fChain->SetBranchAddress("nMuons", &nMuons, &b_nMuons);
    fChain->SetBranchAddress("isLoose", &isLoose, &b_isLoose);
    fChain->SetBranchAddress("isTight", &isTight, &b_isTight);
-   fChain->SetBranchAddress("isHighPt", &isHighPt, &b_isHighPt);
    fChain->SetBranchAddress("ptMuon", &ptMuon, &b_ptMuon);
    fChain->SetBranchAddress("etaMuon", &etaMuon, &b_etaMuon);
    fChain->SetBranchAddress("phiMuon", &phiMuon, &b_phiMuon);
@@ -513,19 +493,10 @@ void mc13TeV::Init(TTree *tree)
    fChain->SetBranchAddress("isoGammaPfR04Muon", &isoGammaPfR04Muon, &b_isoGammaPfR04Muon);
    fChain->SetBranchAddress("isoChargedFromPUMuon", &isoChargedFromPUMuon, &b_isoChargedFromPUMuon);
    fChain->SetBranchAddress("isoPFMuon", &isoPFMuon, &b_isoPFMuon);
-   fChain->SetBranchAddress("isoTrkMuon", &isoTrkMuon, &b_isoTrkMuon);
-   fChain->SetBranchAddress("metPt", &metPt, &b_metPt);
-   fChain->SetBranchAddress("metPhi", &metPhi, &b_metPhi);
-   fChain->SetBranchAddress("metSumEt", &metSumEt, &b_metSumEt);
-   fChain->SetBranchAddress("nPhotons", &nPhotons, &b_nPhotons);
-   fChain->SetBranchAddress("ptPhoton", &ptPhoton, &b_ptPhoton);
-   fChain->SetBranchAddress("etaPhoton", &etaPhoton, &b_etaPhoton);
-   fChain->SetBranchAddress("phiPhoton", &phiPhoton, &b_phiPhoton);
-   fChain->SetBranchAddress("gen_preFSR", &gen_preFSR, &b_gen_preFSR);
    Notify();
 }
 
-Bool_t mc13TeV::Notify()
+Bool_t dataEff_vs_Mass::Notify()
 {
    // The Notify() function is called when a new file is opened. This
    // can be either for a new TTree in a TChain or when when a new TTree
@@ -536,18 +507,18 @@ Bool_t mc13TeV::Notify()
    return kTRUE;
 }
 
-void mc13TeV::Show(Long64_t entry)
+void dataEff_vs_Mass::Show(Long64_t entry)
 {
 // Print contents of entry.
 // If entry is not specified, print current entry
    if (!fChain) return;
    fChain->Show(entry);
 }
-Int_t mc13TeV::Cut(Long64_t entry)
+Int_t dataEff_vs_Mass::Cut(Long64_t entry)
 {
 // This function may be called from Loop.
 // returns  1 if entry is accepted.
 // returns -1 otherwise.
    return 1;
 }
-#endif // #ifdef mc13TeV_cxx
+#endif // #ifdef dataEff_vs_Mass_cxx
