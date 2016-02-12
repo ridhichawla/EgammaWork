@@ -121,6 +121,7 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     // AOD case data members
     edm::EDGetToken electronsToken_;
     edm::EDGetTokenT<reco::VertexCollection> vtxToken_;
+    edm::EDGetTokenT<edm::View<reco::GenParticle> > genParticlesToken_;
     edm::EDGetTokenT<reco::ConversionCollection> conversionsToken_;
 
     // MiniAOD case data members
@@ -128,6 +129,7 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     edm::EDGetToken electronsMiniAODToken_;
     edm::EDGetToken photonsMiniAODToken_;
     edm::EDGetTokenT<reco::VertexCollection> vtxMiniAODToken_;
+    edm::EDGetTokenT<edm::View<reco::GenParticle> > genParticlesMiniAODToken_;
     edm::EDGetTokenT<reco::ConversionCollection> conversionsMiniAODToken_;
 
     // ID decisions objects
@@ -353,115 +355,10 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
 
     double DeltaR(const pat::Electron& e, std::vector<pat::TriggerObjectStandAlone> object);
 
-    /*std::vector<double> pileupMC_;
-    std::vector<double> pileupData_;
-    std::vector<double> pileupWeights_;
+    //std::vector<double> pileupMC_;
+    //std::vector<double> pileupData_;
+    //std::vector<double> pileupWeights_;
 
-    double Spring15MC[50] = {4.8551E-07,
-      1.74806E-06,
-      3.30868E-06,
-      1.62972E-05,
-      4.95667E-05,
-      0.000606966,
-      0.003307249,
-      0.010340741,
-      0.022852296,
-      0.041948781,
-      0.058609363,
-      0.067475755,
-      0.072817826,
-      0.075931405,
-      0.076782504,
-      0.076202319,
-      0.074502547,
-      0.072355135,
-      0.069642102,
-      0.064920999,
-      0.05725576,
-      0.047289348,
-      0.036528446,
-      0.026376131,
-      0.017806872,
-      0.011249422,
-      0.006643385,
-      0.003662904,
-      0.001899681,
-      0.00095614,
-      0.00050028,
-      0.000297353,
-      0.000208717,
-      0.000165856,
-      0.000139974,
-      0.000120481,
-      0.000103826,
-      8.88868E-05,
-      7.53323E-05,
-      6.30863E-05,
-      5.21356E-05,
-      4.24754E-05,
-      3.40876E-05,
-      2.69282E-05,
-      2.09267E-05,
-      1.5989E-05,
-      4.8551E-06,
-      2.42755E-06,
-      4.8551E-07,
-      2.42755E-07
-
-    };
-
-    double dataPU2015[50] = {
-      5.33435e-05,
-      0.00025208,
-      0.000335,
-      0.000489554,
-      0.000799284,
-      0.00170226,
-      0.00506565,
-      0.0196509,
-      0.0626844,
-      0.123218,
-      0.167486,
-      0.180379,
-      0.164132,
-      0.124863,
-      0.0780303,
-      0.0400736,
-      0.0174304,
-      0.00706797,
-      0.00318428,
-      0.0016818,
-      0.000869864,
-      0.000375218,
-      0.000128204,
-      3.53867e-05,
-      8.60652e-06,
-      2.15921e-06,
-      6.37069e-07,
-      2.19252e-07,
-      8.21039e-08,
-      3.18464e-08,
-      1.23916e-08,
-      4.72625e-09,
-      1.74029e-09,
-      6.1328e-10,
-      2.05907e-10,
-      6.57236e-11,
-      1.99243e-11,
-      5.73417e-12,
-      1.56643e-12,
-      4.0614e-13,
-      9.99435e-14,
-      2.33424e-14,
-      5.17428e-15,
-      1.0886e-15,
-      2.17375e-16,
-      4.11959e-17,
-      7.41263e-18,
-      1.26417e-18,
-      2.05164e-19,
-      3.7169e-20
-    };*/
 };
 
 SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
@@ -473,6 +370,7 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   //phoLooseIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("phoLooseIdMap"))),
   //phoMediumIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("phoMediumIdMap"))),
   //phoTightIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("phoTightIdMap")))
+
 {
 
   string_singleEle23    = "HLT_Ele23_WPLoose_Gsf_v";
@@ -533,9 +431,9 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
     (iConfig.getParameter<edm::InputTag>
      ("vertices"));
 
-  /*genParticlesToken_ = mayConsume<edm::View<reco::GenParticle> >
+  genParticlesToken_ = mayConsume<edm::View<reco::GenParticle> >
     (iConfig.getParameter<edm::InputTag>
-    ("genParticles"));*/
+     ("genParticles"));
 
   conversionsToken_ = mayConsume< reco::ConversionCollection >
     (iConfig.getParameter<edm::InputTag>
@@ -559,9 +457,9 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
     (iConfig.getParameter<edm::InputTag>
      ("verticesMiniAOD"));
 
-  /*genParticlesMiniAODToken_ = mayConsume<edm::View<reco::GenParticle> >
+  genParticlesMiniAODToken_ = mayConsume<edm::View<reco::GenParticle> >
     (iConfig.getParameter<edm::InputTag>
-    ("genParticlesMiniAOD"));*/
+     ("genParticlesMiniAOD"));
 
   conversionsMiniAODToken_ = mayConsume< reco::ConversionCollection >
     (iConfig.getParameter<edm::InputTag>
@@ -744,21 +642,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     }
   }
 
-  /*if(misMC){}
-   PUWeight_ = 1.;
-    
-    for(int i=0; i<50; i++) {
-      pileupData_.push_back(dataPU2015[i]);
-      pileupMC_.push_back(Spring15MC[i]);
-    }
-
-    auto scl  = std::accumulate(pileupMC_.begin(), pileupMC_.end(), 0.)/std::accumulate(pileupData_.begin(), pileupData_.end(),0.);
-    for(size_t ib = 0; ib<pileupData_.size(); ++ib) {
-      pileupWeights_.push_back(pileupData_[ib] * scl / pileupMC_[ib]);
-      //std::cout << pileupWeights_.back() << std::endl;
-    }
-    */
-  
   // Get Pileup info
 
   if(misMC){
@@ -802,7 +685,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   std::string photon175Filter("hltEG175HEFilter");
 
   /*bool trigResult = false;
-
     for (unsigned int i=0; i<triggerHandle->size(); i++)
     {
     std::string trigName = triggerNames.triggerName(i);
@@ -1061,63 +943,34 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     iEvent.getByToken(electronsMiniAODToken_,electrons);
   }
 
+  //cout<<"##################################"<<endl;
+
   // Get the MC collection
+  Handle<edm::View<reco::GenParticle> > genParticles;
+  if( isAOD )
+    iEvent.getByToken(genParticlesToken_,genParticles);
+  else
+    iEvent.getByToken(genParticlesMiniAODToken_,genParticles);
+
   if(misMC && misSIG){
-    edm::Handle<reco::GenParticleCollection> genParticles;
-    if( isAOD )
-      iEvent.getByLabel("prunedGenParticles",genParticles);
-    else
-      iEvent.getByLabel("prunedGenParticles",genParticles);
-
-    const reco::GenParticleCollection* genColl= &(*genParticles);
-
-    std::vector<const reco::GenParticle *> sortedPtrs;
-    sortedPtrs.reserve(genColl->size());
-    for (const reco::GenParticle &g : *genColl) { sortedPtrs.push_back(&g); }
-    std::sort(sortedPtrs.begin(), sortedPtrs.end(),PtGreater());
 
     nGenElectrons_ = 0;
     tauFlag = 0;
 
-    for (auto const & genPtr : sortedPtrs) {
-      auto const & genlep = *genPtr;
+    for(size_t i = 0; i < genParticles->size(); ++i){
+      const GenParticle &genlep = (*genParticles)[i];
 
       int id = genlep.pdgId();
-
       TLorentzVector fourmom;
-
-      int n = genlep.numberOfDaughters();
-      if(fabs(id)==11){
-	nGenElectrons_++;
-	SumPhotonMom.SetPxPyPzE(0., 0., 0., 0.);
-
-	preFSR.SetPxPyPzE(genlep.px(), genlep.py(), genlep.pz(), genlep.energy());
-
-	for(int j = 0; j < n; ++j) {
-	  const Candidate * daughter = genlep.daughter(j);
-	  int dauId = daughter->pdgId();
-
-	  if(fabs(dauId) == 22){
-	    Double_t dR = deltaR(daughter->eta(), daughter->phi(), genlep.eta(), genlep.phi());
-
-	    // Sum of all photon's momentum near the post-FSR electron
-	    if(dR<0.1)
-	    {
-	      fourmom.SetPxPyPzE(daughter->px(), daughter->py(), daughter->pz(), daughter->energy());
-	      SumPhotonMom = SumPhotonMom + fourmom;
-	    }
-	  }
-	}
-
-	preFSR = preFSR + SumPhotonMom;
-	new ((*gen_preFSR)[nGenElectrons_]) TLorentzVector(preFSR);
-	//TLorentzVector*  fourmom = (TLorentzVector*) gen_preFSR->At(nGenElectrons_);
-
-      }
+      
+      preFSR.SetPxPyPzE(0., 0., 0., 0.);
+      SumPhotonMom.SetPxPyPzE(0., 0., 0., 0.);
 
       // gen Post FSR
       if(fabs(id)==11 && genlep.fromHardProcessFinalState()==1){
 
+	preFSR.SetPxPyPzE(genlep.px(), genlep.py(), genlep.pz(), genlep.energy());
+	
 	gen_postFSR_ene_.push_back(genlep.energy());
 	gen_postFSR_px_.push_back(genlep.px());
 	gen_postFSR_py_.push_back(genlep.py());
@@ -1127,6 +980,28 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	gen_postFSR_rap_.push_back(genlep.rapidity());
 	gen_postFSR_phi_.push_back(genlep.phi());
 
+      }
+
+      const GenParticleRefVector& motherRefs = genlep.motherRefVector();
+      for(reco::GenParticleRefVector::const_iterator imr = motherRefs.begin(); imr!= motherRefs.end(); ++imr) {
+
+	if(fabs(id)==22 && fabs((*imr)->pdgId())==11){
+	  Double_t dR = deltaR(genlep.eta(), genlep.phi(), preFSR.Eta(), preFSR.Phi());
+
+	  // Sum of all photon's momentum near the post-FSR electron
+	  if(dR<0.1)
+	  {
+	    fourmom.SetPxPyPzE(genlep.px(), genlep.py(), genlep.pz(), genlep.energy());
+	    SumPhotonMom = SumPhotonMom + fourmom;
+	  }
+	}
+      }
+
+      if(fabs(id)==11 && genlep.fromHardProcessFinalState()==1){
+	preFSR = preFSR + SumPhotonMom;
+	new ((*gen_preFSR)[nGenElectrons_]) TLorentzVector(preFSR);
+
+	nGenElectrons_++;
       }
 
       // Separating the taus coming from Z decay
@@ -1355,13 +1230,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   edm::Handle<edm::View<reco::Photon> > photons;
   iEvent.getByToken(photonsMiniAODToken_,photons);
 
-  /*edm::Handle<edm::ValueMap<bool> > pho_loose_id_decisions;
-    edm::Handle<edm::ValueMap<bool> > pho_medium_id_decisions;
-    edm::Handle<edm::ValueMap<bool> > pho_tight_id_decisions;
-    iEvent.getByToken(phoLooseIdMapToken_ ,pho_loose_id_decisions);
-    iEvent.getByToken(phoMediumIdMapToken_,pho_medium_id_decisions);
-    iEvent.getByToken(phoTightIdMapToken_ ,pho_tight_id_decisions);*/
-
   //cout<<"5"<<endl;
 
   nPhotons_ = 0;
@@ -1379,13 +1247,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       etaPhoton_ .push_back(pho->superCluster()->eta());
       phiPhoton_ .push_back(pho->superCluster()->phi());
 
-      /*bool isPhoPassLoose  = (*pho_loose_id_decisions)[pho];
-	bool isPhoPassMedium = (*pho_medium_id_decisions)[pho];
-	bool isPhoPassTight  = (*pho_tight_id_decisions)[pho];
-	phoPassLooseId_.push_back ( (int)isPhoPassLoose );
-	phoPassMediumId_.push_back( (int)isPhoPassMedium);
-	phoPassTightId_.push_back ( (int)isPhoPassTight );*/
-
     }
   }
 
@@ -1394,7 +1255,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   // Save this electron's info
   electronTree_->Fill();
 
-  //PUWeight_ = 1.;
   //pileupWeights_.clear();
   //pileupData_.clear();
   //pileupMC_.clear();
