@@ -85,6 +85,8 @@ Implementation:
 #include "PhysicsTools/Utilities/interface/LumiReWeighting.h"
 #include "DataFormats/PatCandidates/interface/MET.h"
 
+#include "DataFormats/PatCandidates/interface/VIDCutFlowResult.h"
+
 #include "/afs/cern.ch/work/r/rchawla/public/utils.h"
 
 //
@@ -107,6 +109,8 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     virtual void beginJob() override;
     virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
     virtual void endJob() override;
+
+    void printCutFlowResult(vid::CutFlowResult &cutflow);
 
     // ----------member data ---------------------------
     // Data members that are the same for AOD and miniAOD
@@ -137,6 +141,13 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     edm::EDGetTokenT<edm::ValueMap<bool> > eleLooseIdMapToken_;
     edm::EDGetTokenT<edm::ValueMap<bool> > eleMediumIdMapToken_;
     edm::EDGetTokenT<edm::ValueMap<bool> > eleTightIdMapToken_;
+    edm::EDGetTokenT<edm::ValueMap<bool> > eleHEEPIdMapToken_;
+
+    // One example of full information about the cut flow
+    edm::EDGetTokenT<edm::ValueMap<vid::CutFlowResult> > eleMediumIdFullInfoMapToken_;
+
+    // Verbose output for ID
+    bool verboseIdFlag_;
 
     edm::Service<TFileService> fs;
     TTree *electronTree_;
@@ -164,39 +175,21 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     //Double_t PUWeight_;
 
     // Trigger
-    std::string string_singleEle23;
-    std::string string_singleEle27;
-    std::string string_singleMuon;
-    std::string string_doubleEle;
-
-    std::string string_emu_17_8;
-    std::string string_emu_12_17;
-    std::string string_emu_23_8;
-
-    std::vector<std::string> hlNames_;
-    std::vector<std::string> single_electron_23_triggers_in_run;
-    std::vector<std::string> single_electron_27_triggers_in_run;
-    std::vector<std::string> single_muon_triggers_in_run;
-    std::vector<std::string> double_electron_triggers_in_run;
-    std::vector<std::string> double_emu_17_8_triggers_in_run;
-    std::vector<std::string> double_emu_12_17_triggers_in_run;
-    std::vector<std::string> double_emu_23_8_triggers_in_run;
-
-    bool single_Ele23;
-    bool single_Ele27;
-    bool singleMuon;
-    bool doubleElectron;
-    bool doubleEMu_17_8;
-    bool doubleEMu_12_17;
-    bool doubleEMu_23_8;
-
-    std::vector<int> idx_singleEle23;
-    std::vector<int> idx_singleEle27;
-    std::vector<int> idx_singleMuon;
-    std::vector<int> idx_doubleElectron;
-    std::vector<int> idx_doubleEMu_17_8;
-    std::vector<int> idx_doubleEMu_12_17;
-    std::vector<int> idx_doubleEMu_23_8;
+    std::regex ele23_WPLoose;
+    std::regex ele27_WP85;
+    std::regex isoMu20;
+    std::regex ele17_ele12;
+    std::regex mu8_ele17;
+    std::regex mu17_ele12;
+    std::regex mu8_ele23;
+    
+    bool Ele23_WPLoose;
+    bool Ele27_WP85;
+    bool IsoMu20;
+    bool Ele17_Ele12;
+    bool Mu8_Ele17;
+    bool Mu17_Ele12;
+    bool Mu8_Ele23;
 
     // tau variables
     Int_t tauFlag;
@@ -223,14 +216,14 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     std::vector<Float_t> genPostFSR_Eta_;
     std::vector<Float_t> genPostFSR_Phi_;
     std::vector<Float_t> genPostFSR_En_;
-    
+
     std::vector<Float_t> genPhoton_Pt_;
     std::vector<Float_t> genPhoton_Eta_;
     std::vector<Float_t> genPhoton_Phi_;
     std::vector<Float_t> genPhoton_En_;
 
     Int_t nElectrons;
-    
+
     std::vector<Float_t> ptElec_;
     std::vector<Float_t> etaElec_;
     std::vector<Float_t> rapElec_;
@@ -278,7 +271,22 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     std::vector<Int_t> passLooseId_;
     std::vector<Int_t> passMediumId_;
     std::vector<Int_t> passTightId_;
+    std::vector<Int_t> passHEEPId_;
     std::vector<Int_t> eleEcalDrivenSeed_;
+
+    std::vector<Int_t> isPassMedium_NoPt_;
+    std::vector<Int_t> isPassMedium_NoScEta_; 
+    std::vector<Int_t> isPassMedium_NoDEta_;
+    std::vector<Int_t> isPassMedium_NoDPhi_;
+    std::vector<Int_t> isPassMedium_NoSigmaEtaEta_;
+    std::vector<Int_t> isPassMedium_NoHOverE_;
+    std::vector<Int_t> isPassMedium_NoDxy_;
+    std::vector<Int_t> isPassMedium_NoDz_;
+    std::vector<Int_t> isPassMedium_NoEInvP_;
+    std::vector<Int_t> isPassMedium_NoPFIso_;
+    std::vector<Int_t> isPassMedium_NoConVeto_;
+    std::vector<Int_t> isPassMedium_NoMissHits_;
+
 
     // Trigger objects
     std::vector<double> pt_Ele23;
@@ -346,22 +354,25 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
 };
 
 SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
-  
+
   eleVetoIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleVetoIdMap"))),
   eleLooseIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleLooseIdMap"))),
   eleMediumIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleMediumIdMap"))),
-  eleTightIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleTightIdMap")))
+  eleTightIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleTightIdMap"))),
+  eleHEEPIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleHEEPIdMap"))),
+  eleMediumIdFullInfoMapToken_(consumes<edm::ValueMap<vid::CutFlowResult> >(iConfig.getParameter<edm::InputTag>("eleMediumIdFullInfoMap"))),
+  verboseIdFlag_(iConfig.getParameter<bool>("eleIdVerbose"))
 
 {
 
-  string_singleEle23    = "HLT_Ele23_WPLoose_Gsf_v";
-  string_singleEle27    = "HLT_Ele27_WP85_Gsf_v";
-  string_singleMuon     = "HLT_IsoMu20_v";
-  string_doubleEle      = "HLT_Ele17_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v";
-  string_emu_17_8       = "HLT_Mu8_TrkIsoVVL_Ele17_CaloIdL_TrackIdL_IsoVL_v";
-  string_emu_12_17      = "HLT_Mu17_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v";
-  string_emu_23_8       = "HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_v";
-
+  ele23_WPLoose = "(HLT_Ele23_WPLoose_Gsf_v)(.*)";
+  ele27_WP85    = "(HLT_Ele27_WP85_Gsf_v)(.*)";
+  isoMu20       = "(HLT_IsoMu20_v)(.*)";
+  ele17_ele12   = "(HLT_Ele17_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v)(.*)";
+  mu8_ele17     = "(HLT_Mu8_TrkIsoVVL_Ele17_CaloIdL_TrackIdL_IsoVL_v)(.*)";
+  mu17_ele12    = "(HLT_Mu17_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v)(.*)";
+  mu8_ele23     = "(HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_v)(.*)";
+  
   // triggers for Fake-Rate method
   Photon_22  = "(HLT_Photon22_v)(.*)";
   Photon_30  = "(HLT_Photon30_v)(.*)";
@@ -471,13 +482,13 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronTree_->Branch("rho"        ,  &rho , "rho/F");
   //electronTree_->Branch("PUWeight", &PUWeight_, "PUWeight/D");
 
-  electronTree_->Branch("single_Ele23"     ,  &single_Ele23    );
-  electronTree_->Branch("single_Ele27"     ,  &single_Ele27    );
-  electronTree_->Branch("singleMuon"    ,  &singleMuon   );
-  electronTree_->Branch("doubleElectron"    ,  &doubleElectron    );
-  electronTree_->Branch("doubleEMu_17_8"    ,  &doubleEMu_17_8    );
-  electronTree_->Branch("doubleEMu_12_17"    ,  &doubleEMu_12_17  );
-  electronTree_->Branch("doubleEMu_23_8"    ,  &doubleEMu_23_8    );
+  electronTree_->Branch("Ele23_WPLoose" ,  &Ele23_WPLoose);
+  electronTree_->Branch("Ele27_WP85"    ,  &Ele27_WP85);
+  electronTree_->Branch("IsoMu20"       ,  &IsoMu20);
+  electronTree_->Branch("Ele17_Ele12"   ,  &Ele17_Ele12);
+  electronTree_->Branch("Mu8_Ele17"     ,  &Mu8_Ele17);
+  electronTree_->Branch("Mu17_Ele12"    ,  &Mu17_Ele12);
+  electronTree_->Branch("Mu8_Ele23"     ,  &Mu8_Ele23);
 
   electronTree_->Branch("etPhoton", &etPhoton_);
   electronTree_->Branch("singlePhoton", &singlePhoton);
@@ -496,7 +507,7 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronTree_->Branch("genlepMother_Id", &genlepMother_Id_);
   electronTree_->Branch("fromHProcessFinalState", &fromHProcessFinalState_);
   electronTree_->Branch("fromHProcessDecayed", &fromHProcessDecayed_);
-  
+
   electronTree_->Branch("genlep_Px"    ,  &genlep_Px_    );
   electronTree_->Branch("genlep_Py"    ,  &genlep_Py_    );
   electronTree_->Branch("genlep_Pz"    ,  &genlep_Pz_    );
@@ -510,7 +521,7 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronTree_->Branch("genPostFSR_Eta"   ,  &genPostFSR_Eta_    );
   electronTree_->Branch("genPostFSR_Phi"   ,  &genPostFSR_Phi_    );
   electronTree_->Branch("genPostFSR_En"    ,  &genPostFSR_En_    );
-  
+
   electronTree_->Branch("genPhoton_Pt"    ,  &genPhoton_Pt_    );
   electronTree_->Branch("genPhoton_Eta"   ,  &genPhoton_Eta_    );
   electronTree_->Branch("genPhoton_Phi"   ,  &genPhoton_Phi_    );
@@ -558,6 +569,21 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronTree_->Branch("passLooseId"  ,  &passLooseId_ );
   electronTree_->Branch("passMediumId" ,  &passMediumId_ );
   electronTree_->Branch("passTightId"  ,  &passTightId_ );
+  electronTree_->Branch("passHEEPId" , &passHEEPId_ );
+
+  electronTree_->Branch("isPassMedium_NoPt", &isPassMedium_NoPt_);
+  electronTree_->Branch("isPassMedium_NoScEta", &isPassMedium_NoScEta_);
+  electronTree_->Branch("isPassMedium_NoDEta", &isPassMedium_NoDEta_);
+  electronTree_->Branch("isPassMedium_NoDPhi", &isPassMedium_NoDPhi_);
+  electronTree_->Branch("isPassMedium_NoSigmaEtaEta", &isPassMedium_NoSigmaEtaEta_);
+  electronTree_->Branch("isPassMedium_NoHOverE", &isPassMedium_NoHOverE_);
+  electronTree_->Branch("isPassMedium_NoDxy", &isPassMedium_NoDxy_);
+  electronTree_->Branch("isPassMedium_NoDz", &isPassMedium_NoDz_);
+  electronTree_->Branch("isPassMedium_NoEInvP", &isPassMedium_NoEInvP_);
+  electronTree_->Branch("isPassMedium_NoPFIso", &isPassMedium_NoPFIso_);
+  electronTree_->Branch("isPassMedium_NoConVeto", &isPassMedium_NoConVeto_);
+  electronTree_->Branch("isPassMedium_NoMissHits", &isPassMedium_NoMissHits_);
+
   electronTree_->Branch("eleEcalDrivenSeed", &eleEcalDrivenSeed_);
   electronTree_->Branch("eleInBarrel", &eleInBarrel_);
   electronTree_->Branch("eleInEndcap", &eleInEndcap_);
@@ -636,7 +662,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   }
 
   //cout<<"2"<<endl;
-  
+
   // Get Triggers
   Handle<edm::TriggerResults> triggerHandle;
   iEvent.getByToken(triggerToken_, triggerHandle);
@@ -678,7 +704,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     obj.unpackPathNames(triggerNames);
     //cout<<"Trigger: "<<obj.unpackPathNames(triggerNames)<<endl;
     for (unsigned j = 0; j < obj.filterLabels().size(); ++j){
-      
+
       if((SEFilter.compare(obj.filterLabels()[j]))==0){
 	pt_Ele23.push_back(obj.pt());
 	eta_Ele23.push_back(obj.eta());
@@ -749,6 +775,15 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   for (unsigned int i=0; i<triggerHandle->size(); i++)
   {
+
+   if(std::regex_match(triggerNames.triggerName(i),ele23_WPLoose)) Ele23_WPLoose = triggerHandle->accept(i);
+   if(std::regex_match(triggerNames.triggerName(i),ele27_WP85)) Ele27_WP85       = triggerHandle->accept(i);
+   if(std::regex_match(triggerNames.triggerName(i),isoMu20)) IsoMu20             = triggerHandle->accept(i);
+   if(std::regex_match(triggerNames.triggerName(i),ele17_ele12)) Ele17_Ele12     = triggerHandle->accept(i);
+   if(std::regex_match(triggerNames.triggerName(i),mu8_ele17)) Mu8_Ele17         = triggerHandle->accept(i);
+   if(std::regex_match(triggerNames.triggerName(i),mu17_ele12)) Mu17_Ele12       = triggerHandle->accept(i);
+   if(std::regex_match(triggerNames.triggerName(i),mu8_ele23)) Mu8_Ele23         = triggerHandle->accept(i);
+    
     if(photon22){
       if(std::regex_match(triggerNames.triggerName(i),Photon_22)) {
 	singlePhoton = triggerHandle->accept(i);
@@ -810,91 +845,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   //cout<<"singlePhoton: "<<singlePhoton<<"   "<<"prescalePhoton: "<<prescalePhoton<<endl;
 
   //cout<<"3"<<endl;
-  
-  hlNames_ = triggerNames.triggerNames();
-  int ntriggers = hlNames_.size();
-  Int_t hsize = Int_t(triggerHandle->size());
 
-  for (int itrigger=0; itrigger<ntriggers; itrigger++)
-  {
-    std::string hltname(triggerNames.triggerName(itrigger));
-    size_t found_singleEle23   = hltname.find(string_singleEle23);
-    size_t found_singleEle27   = hltname.find(string_singleEle27);
-    size_t found_singleMuon = hltname.find(string_singleMuon);
-    size_t found_doubleEle = hltname.find(string_doubleEle);
-    size_t found_emu_17_8 = hltname.find(string_emu_17_8);
-    size_t found_emu_12_17 = hltname.find(string_emu_12_17);
-    size_t found_emu_23_8 = hltname.find(string_emu_23_8);
-
-    if(found_singleEle23 !=string::npos) single_electron_23_triggers_in_run.push_back(hltname);
-    if(found_singleEle27 !=string::npos) single_electron_27_triggers_in_run.push_back(hltname);
-    if(found_singleMuon !=string::npos) single_muon_triggers_in_run.push_back(hltname);
-    if(found_doubleEle !=string::npos) double_electron_triggers_in_run.push_back(hltname);
-    if(found_emu_17_8 !=string::npos) double_emu_17_8_triggers_in_run.push_back(hltname);
-    if(found_emu_12_17 !=string::npos) double_emu_12_17_triggers_in_run.push_back(hltname);
-    if(found_emu_23_8 !=string::npos) double_emu_23_8_triggers_in_run.push_back(hltname);
-
-  }
-
-  for ( int itrigger = 0 ; itrigger < (int)single_electron_23_triggers_in_run.size(); itrigger++){
-    idx_singleEle23.push_back(triggerNames.triggerIndex(single_electron_23_triggers_in_run[itrigger]));
-    if(idx_singleEle23.size()>0)
-      if(idx_singleEle23[itrigger] < hsize){
-	single_Ele23 = (triggerHandle->accept(idx_singleEle23[itrigger]));
-      }
-  }
-
-  for ( int itrigger = 0 ; itrigger < (int)single_electron_27_triggers_in_run.size(); itrigger++){
-    idx_singleEle27.push_back(triggerNames.triggerIndex(single_electron_27_triggers_in_run[itrigger]));
-    if(idx_singleEle27.size()>0)
-      if(idx_singleEle27[itrigger] < hsize){
-	single_Ele27 = (triggerHandle->accept(idx_singleEle27[itrigger]));
-      }
-  }
-
-
-  for ( int itrigger = 0 ; itrigger < (int)double_electron_triggers_in_run.size(); itrigger++){
-    idx_doubleElectron.push_back(triggerNames.triggerIndex(double_electron_triggers_in_run[itrigger]));
-    if(idx_doubleElectron.size()>0)
-      if(idx_doubleElectron[itrigger] < hsize){
-	doubleElectron = (triggerHandle->accept(idx_doubleElectron[itrigger]));
-      }
-  }
-
-  for ( int itrigger = 0 ; itrigger < (int)single_muon_triggers_in_run.size(); itrigger++){
-    idx_singleMuon.push_back(triggerNames.triggerIndex(single_muon_triggers_in_run[itrigger]));
-    if(idx_singleMuon.size()>0)
-      if(idx_singleMuon[itrigger] < hsize){
-	singleMuon = (triggerHandle->accept(idx_singleMuon[itrigger]));
-      }
-  }
-
-  for ( int itrigger = 0 ; itrigger < (int)double_emu_17_8_triggers_in_run.size(); itrigger++){
-    idx_doubleEMu_17_8.push_back(triggerNames.triggerIndex(double_emu_17_8_triggers_in_run[itrigger]));
-    if(idx_doubleEMu_17_8.size()>0)
-      if(idx_doubleEMu_17_8[itrigger] < hsize){
-	doubleEMu_17_8 = (triggerHandle->accept(idx_doubleEMu_17_8[itrigger]));
-      }
-  }
-
-  for ( int itrigger = 0 ; itrigger < (int)double_emu_12_17_triggers_in_run.size(); itrigger++){
-    idx_doubleEMu_12_17.push_back(triggerNames.triggerIndex(double_emu_12_17_triggers_in_run[itrigger]));
-    if(idx_doubleEMu_12_17.size()>0)
-      if(idx_doubleEMu_12_17[itrigger] < hsize){
-	doubleEMu_12_17 = (triggerHandle->accept(idx_doubleEMu_12_17[itrigger]));
-      }
-  }
-
-  for ( int itrigger = 0 ; itrigger < (int)double_emu_23_8_triggers_in_run.size(); itrigger++){
-    idx_doubleEMu_23_8.push_back(triggerNames.triggerIndex(double_emu_23_8_triggers_in_run[itrigger]));
-    if(idx_doubleEMu_23_8.size()>0)
-      if(idx_doubleEMu_23_8[itrigger] < hsize){
-	doubleEMu_23_8 = (triggerHandle->accept(idx_doubleEMu_23_8[itrigger]));
-      }
-  }
-
-  //cout<<"4"<<endl;
-  
   // Get rho value
   edm::Handle< double > rhoH;
   iEvent.getByToken(rhoToken_,rhoH);
@@ -933,12 +884,12 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
       genlep_Id_.push_back(genlep.pdgId());
       if(abs(genlep.pdgId())==22) genlepMother_Id_.push_back(genlep.mother(0)->pdgId());
-      
+
       fromHProcessFinalState_.push_back(genlep.fromHardProcessFinalState());
       fromHProcessDecayed_.push_back(genlep.fromHardProcessDecayed());
 
       nGenElectrons++;
-      
+
       genlep_Px_.push_back(genlep.px());
       genlep_Py_.push_back(genlep.py());
       genlep_Pz_.push_back(genlep.pz());
@@ -950,7 +901,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
       // gen Post FSR
       if(abs(genlep.pdgId())==11 && genlep.fromHardProcessFinalState()==1){
-	
+
 	genPostFSR_Pt_.push_back(genlep.pt());
 	genPostFSR_Eta_.push_back(genlep.eta());
 	genPostFSR_Phi_.push_back(genlep.phi());
@@ -1012,10 +963,16 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   edm::Handle<edm::ValueMap<bool> > loose_id_decisions;
   edm::Handle<edm::ValueMap<bool> > medium_id_decisions;
   edm::Handle<edm::ValueMap<bool> > tight_id_decisions;
+  edm::Handle<edm::ValueMap<bool> > heep_id_decisions;
   iEvent.getByToken(eleVetoIdMapToken_ ,veto_id_decisions);
   iEvent.getByToken(eleLooseIdMapToken_ ,loose_id_decisions);
   iEvent.getByToken(eleMediumIdMapToken_,medium_id_decisions);
   iEvent.getByToken(eleTightIdMapToken_ ,tight_id_decisions);
+  iEvent.getByToken(eleHEEPIdMapToken_ ,heep_id_decisions);
+
+  // Full cut flow info for one of the working points:
+  edm::Handle<edm::ValueMap<vid::CutFlowResult> > medium_id_cutflow;
+  iEvent.getByToken(eleMediumIdFullInfoMapToken_,medium_id_cutflow);
 
   nElectrons = 0;
 
@@ -1104,10 +1061,53 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       bool isPassLoose  = (*loose_id_decisions)[el];
       bool isPassMedium = (*medium_id_decisions)[el];
       bool isPassTight  = (*tight_id_decisions)[el];
+      bool isPassHEEP = (*heep_id_decisions)[el];
       passVetoId_.push_back  ( (int)isPassVeto  );
       passLooseId_.push_back ( (int)isPassLoose );
       passMediumId_.push_back( (int)isPassMedium);
       passTightId_.push_back ( (int)isPassTight );
+      passHEEPId_.push_back ( (int)isPassHEEP );
+
+      if( verboseIdFlag_ ) {
+	vid::CutFlowResult fullCutFlowData = (*medium_id_cutflow)[el];
+
+	// Full printout
+	printf("\nDEBUG CutFlow, full info for cand with pt=%f:\n", el->pt());
+	printCutFlowResult(fullCutFlowData);
+
+	// Example of how to find the ID decision with one cut removed, this could be needed for N-1 studies.
+	const int cutIndexToMask = 7; 
+	// Here we masked the cut by cut index, but you can also do it by cut name string.
+	vid::CutFlowResult maskedCutFlowData = fullCutFlowData.getCutFlowResultMasking(cutIndexToMask);
+	printf("DEBUG CutFlow, the result with cut %s masked out\n", maskedCutFlowData.getNameAtIndex(cutIndexToMask).c_str());
+	printCutFlowResult(maskedCutFlowData);
+	}
+
+      vid::CutFlowResult mediumID_Pt          = (*medium_id_cutflow)[el].getCutFlowResultMasking("MinPtCut_0");
+      vid::CutFlowResult mediumID_ScEta       = (*medium_id_cutflow)[el].getCutFlowResultMasking("GsfEleSCEtaMultiRangeCut_0");
+      vid::CutFlowResult mediumID_DEta        = (*medium_id_cutflow)[el].getCutFlowResultMasking("GsfEleDEtaInCut_0");
+      vid::CutFlowResult mediumID_DPhi        = (*medium_id_cutflow)[el].getCutFlowResultMasking("GsfEleDPhiInCut_0");
+      vid::CutFlowResult mediumID_SigmaEtaEta = (*medium_id_cutflow)[el].getCutFlowResultMasking("GsfEleFull5x5SigmaIEtaIEtaCut_0");
+      vid::CutFlowResult mediumID_HOverE      = (*medium_id_cutflow)[el].getCutFlowResultMasking("GsfEleHadronicOverEMCut_0");
+      vid::CutFlowResult mediumID_Dxy         = (*medium_id_cutflow)[el].getCutFlowResultMasking("GsfEleDxyCut_0");
+      vid::CutFlowResult mediumID_Dz          = (*medium_id_cutflow)[el].getCutFlowResultMasking("GsfEleDzCut_0");
+      vid::CutFlowResult mediumID_EInvP       = (*medium_id_cutflow)[el].getCutFlowResultMasking("GsfEleEInverseMinusPInverseCut_0");
+      vid::CutFlowResult mediumID_PFIso       = (*medium_id_cutflow)[el].getCutFlowResultMasking("GsfEleEffAreaPFIsoCut_0");
+      vid::CutFlowResult mediumID_ConVeto     = (*medium_id_cutflow)[el].getCutFlowResultMasking("GsfEleConversionVetoCut_0");
+      vid::CutFlowResult mediumID_MissHits    = (*medium_id_cutflow)[el].getCutFlowResultMasking("GsfEleMissingHitsCut_0");
+
+      isPassMedium_NoPt_.push_back(mediumID_Pt.cutFlowPassed());
+      isPassMedium_NoScEta_.push_back(mediumID_ScEta.cutFlowPassed());
+      isPassMedium_NoDEta_.push_back(mediumID_DEta.cutFlowPassed());
+      isPassMedium_NoDPhi_.push_back(mediumID_DPhi.cutFlowPassed());
+      isPassMedium_NoSigmaEtaEta_.push_back(mediumID_SigmaEtaEta.cutFlowPassed());
+      isPassMedium_NoHOverE_.push_back(mediumID_HOverE.cutFlowPassed());
+      isPassMedium_NoDxy_.push_back(mediumID_Dxy.cutFlowPassed());
+      isPassMedium_NoDz_.push_back(mediumID_Dz.cutFlowPassed());
+      isPassMedium_NoEInvP_.push_back(mediumID_EInvP.cutFlowPassed());
+      isPassMedium_NoPFIso_.push_back(mediumID_PFIso.cutFlowPassed());
+      isPassMedium_NoConVeto_.push_back(mediumID_ConVeto.cutFlowPassed());
+      isPassMedium_NoMissHits_.push_back(mediumID_MissHits.cutFlowPassed());
 
       eleInBarrel_.push_back(el->isEB());
       eleInEndcap_.push_back(el->isEE());
@@ -1196,23 +1196,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   // Save this electron's info
   electronTree_->Fill();
 
-  hlNames_.clear();
-  single_electron_23_triggers_in_run.clear();
-  single_electron_27_triggers_in_run.clear();
-  single_muon_triggers_in_run.clear();
-  double_electron_triggers_in_run.clear();
-  double_emu_17_8_triggers_in_run.clear();
-  double_emu_12_17_triggers_in_run.clear();
-  double_emu_23_8_triggers_in_run.clear();
-
-  idx_singleEle23.clear();
-  idx_singleEle27.clear();
-  idx_singleMuon.clear();
-  idx_doubleElectron.clear();
-  idx_doubleEMu_17_8.clear();
-  idx_doubleEMu_12_17.clear();
-  idx_doubleEMu_23_8.clear();
-
   // Clear vectors
   pt_Ele23.clear();
   eta_Ele23.clear();
@@ -1240,7 +1223,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     genPostFSR_Eta_.clear();
     genPostFSR_Phi_.clear();
     genPostFSR_En_.clear();
-    
+
     genPhoton_Pt_.clear();
     genPhoton_Eta_.clear();
     genPhoton_Phi_.clear();
@@ -1289,6 +1272,21 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   passLooseId_.clear();
   passMediumId_.clear();
   passTightId_.clear();
+  passHEEPId_ .clear();
+
+  isPassMedium_NoPt_.clear();
+  isPassMedium_NoScEta_.clear();
+  isPassMedium_NoDEta_.clear();
+  isPassMedium_NoDPhi_.clear();
+  isPassMedium_NoSigmaEtaEta_.clear();
+  isPassMedium_NoHOverE_.clear();
+  isPassMedium_NoDxy_.clear();
+  isPassMedium_NoDz_.clear();
+  isPassMedium_NoEInvP_.clear();
+  isPassMedium_NoPFIso_.clear();
+  isPassMedium_NoConVeto_.clear();
+  isPassMedium_NoMissHits_.clear();
+
   eleEcalDrivenSeed_.clear();
 
   eleInBarrel_.clear();
@@ -1373,6 +1371,22 @@ SimpleElectronNtupler::fillDescriptions(edm::ConfigurationDescriptions& descript
   edm::ParameterSetDescription desc;
   desc.setUnknown();
   descriptions.addDefault(desc);
+}
+
+void SimpleElectronNtupler::printCutFlowResult(vid::CutFlowResult &cutflow){
+
+  printf("    CutFlow name= %s    decision is %d\n", 
+      cutflow.cutFlowName().c_str(),
+      (int) cutflow.cutFlowPassed());
+  int ncuts = cutflow.cutFlowSize();
+  printf(" Index                               cut name              isMasked    value-cut-upon     pass?\n");
+  for(int icut = 0; icut<ncuts; icut++){
+    printf("  %2d      %50s    %d        %f          %d\n", icut,
+	cutflow.getNameAtIndex(icut).c_str(),
+	(int)cutflow.isCutMasked(icut),
+	cutflow.getValueCutUpon(icut),
+	(int)cutflow.getCutResultByIndex(icut));
+  }
 }
 
 //define this as a plug-in
