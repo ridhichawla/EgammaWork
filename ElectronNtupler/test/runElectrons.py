@@ -12,7 +12,7 @@ process.load("Geometry.CaloEventSetup.CaloTopology_cfi");
 #
 # Define input data to read
 #
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
 #process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 #process.GlobalTag.globaltag = 'MCRUN2_74_V9::All'                                             #MC
@@ -38,8 +38,8 @@ inputFilesMiniAOD = cms.untracked.vstring(
     #'/store/data/Run2015D/MuonEG/MINIAOD/PromptReco-v4/000/258/159/00000/64914E6C-F26B-E511-B0C8-02163E0142D1.root'
     #'/store/data/Run2015D/MuonEG/MINIAOD/05Oct2015-v2/60000/00D43A12-C573-E511-8F4C-0025905A60E0.root'
     
-    #'/store/mc/RunIISpring15MiniAODv2/DYJetsToLL_M-10to50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/10000/2699AF1F-9F6D-E511-BDD8-0025901D4AF0.root'
-    '/store/mc/RunIISpring15MiniAODv2/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/50000/041705A6-6F6F-E511-AC9C-001E6757F1D4.root'
+    '/store/mc/RunIISpring15MiniAODv2/DYJetsToLL_M-10to50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/10000/2699AF1F-9F6D-E511-BDD8-0025901D4AF0.root'
+    #'/store/mc/RunIISpring15MiniAODv2/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/50000/041705A6-6F6F-E511-AC9C-001E6757F1D4.root'
     #'/store/mc/RunIISpring15MiniAODv2/WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/40000/008865AA-596D-E511-92F1-0025905A6110.root'
     #'/store/mc/RunIISpring15MiniAODv2/TT_TuneCUETP8M1_13TeV-powheg-pythia8/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/40000/00087FEB-236E-E511-9ACB-003048FF86CA.root'
     
@@ -147,8 +147,8 @@ process.primaryVertexFilter  = cms.EDFilter("VertexSelector",
       )
 
 process.TFileService = cms.Service("TFileService",
-                                   fileName = cms.string('DY_check.root')
-				   #fileName = cms.string('SingleElectron_Run2015C_05Oct2015-v1.root')
+                                   #fileName = cms.string('DY_check.root')
+				   #fileName = cms.string('SE_Run2015D_PromptReco.root')
                                    )
 
 
