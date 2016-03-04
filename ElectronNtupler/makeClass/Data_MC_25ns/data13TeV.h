@@ -1,12 +1,12 @@
 //////////////////////////////////////////////////////////
 // This class has been automatically generated on
-// Sat Jan 30 07:18:00 2016 by ROOT version 6.02/05
+// Sat Jan 30 11:36:46 2016 by ROOT version 6.02/05
 // from TTree ElectronTree/Electron data
-// found on file: /tmp/rchawla/DY_M50_miniAODv2.root
+// found on file: /tmp/rchawla/SingleElectron_Run2015D.root
 //////////////////////////////////////////////////////////
 
-#ifndef mc13TeV_h
-#define mc13TeV_h
+#ifndef data13TeV_h
+#define data13TeV_h
 
 #include <TROOT.h>
 #include <TChain.h>
@@ -19,7 +19,7 @@
 #include "vector"
 #include "TClonesArray.h"
 
-class mc13TeV {
+class data13TeV {
 public :
    TTree          *fChain;   //!pointer to the analyzed TTree or TChain
    Int_t           fCurrent; //!current Tree number in a TChain
@@ -252,8 +252,8 @@ public :
    TBranch        *b_phiPhoton;   //!
    TBranch        *b_gen_preFSR;   //!
 
-   mc13TeV(TTree *tree=0);
-   virtual ~mc13TeV();
+   data13TeV(TTree *tree=0);
+   virtual ~data13TeV();
    virtual Int_t    Cut(Long64_t entry);
    virtual Int_t    GetEntry(Long64_t entry);
    virtual Long64_t LoadTree(Long64_t entry);
@@ -265,36 +265,36 @@ public :
 
 #endif
 
-#ifdef mc13TeV_cxx
-mc13TeV::mc13TeV(TTree *tree) : fChain(0) 
+#ifdef data13TeV_cxx
+data13TeV::data13TeV(TTree *tree) : fChain(0) 
 {
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
    if (tree == 0) {
-      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("/tmp/rchawla/WJetsToLNu_miniAODv2.root");
+      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("/tmp/rchawla/SingleElectron_Run2015D.root");
       if (!f || !f->IsOpen()) {
-         f = new TFile("/tmp/rchawla/WJetsToLNu_miniAODv2.root");
+         f = new TFile("/tmp/rchawla/SingleElectron_Run2015D.root");
       }
-      TDirectory * dir = (TDirectory*)f->Get("ntupler;1");
+      TDirectory * dir = (TDirectory*)f->Get("/tmp/rchawla/SingleElectron_Run2015D.root:/ntupler");
       dir->GetObject("ElectronTree",tree);
 
    }
    Init(tree);
 }
 
-mc13TeV::~mc13TeV()
+data13TeV::~data13TeV()
 {
    if (!fChain) return;
    delete fChain->GetCurrentFile();
 }
 
-Int_t mc13TeV::GetEntry(Long64_t entry)
+Int_t data13TeV::GetEntry(Long64_t entry)
 {
 // Read contents of entry.
    if (!fChain) return 0;
    return fChain->GetEntry(entry);
 }
-Long64_t mc13TeV::LoadTree(Long64_t entry)
+Long64_t data13TeV::LoadTree(Long64_t entry)
 {
 // Set the environment to read one entry
    if (!fChain) return -5;
@@ -307,7 +307,7 @@ Long64_t mc13TeV::LoadTree(Long64_t entry)
    return centry;
 }
 
-void mc13TeV::Init(TTree *tree)
+void data13TeV::Init(TTree *tree)
 {
    // The Init() function is called when the selector needs to initialize
    // a new tree or chain. Typically here the branch addresses and branch
@@ -525,7 +525,7 @@ void mc13TeV::Init(TTree *tree)
    Notify();
 }
 
-Bool_t mc13TeV::Notify()
+Bool_t data13TeV::Notify()
 {
    // The Notify() function is called when a new file is opened. This
    // can be either for a new TTree in a TChain or when when a new TTree
@@ -536,18 +536,18 @@ Bool_t mc13TeV::Notify()
    return kTRUE;
 }
 
-void mc13TeV::Show(Long64_t entry)
+void data13TeV::Show(Long64_t entry)
 {
 // Print contents of entry.
 // If entry is not specified, print current entry
    if (!fChain) return;
    fChain->Show(entry);
 }
-Int_t mc13TeV::Cut(Long64_t entry)
+Int_t data13TeV::Cut(Long64_t entry)
 {
 // This function may be called from Loop.
 // returns  1 if entry is accepted.
 // returns -1 otherwise.
    return 1;
 }
-#endif // #ifdef mc13TeV_cxx
+#endif // #ifdef data13TeV_cxx
