@@ -23,7 +23,7 @@ void mc13TeV::Loop()
   TH1F *weights = (TH1F*)DATA_puDist->Clone("weights");
   weights->Divide(MC_puDist);
 
-  TFile *file = new TFile(".root", "recreate");
+  TFile *file = new TFile("dyee_M50.root", "recreate");
 
   int good_elec, n_all_cuts;
   double sum_weights;
@@ -59,19 +59,17 @@ void mc13TeV::Loop()
   Double_t xbins[46] = {15,20,25,30,35,40,45,50,55,60,64,68,72,76,81,86,91,96,101,106,110,115,120,126,133,141,150,160,171,185,200,220,243,273,320,380,440,510,600,700,830,1000,1200,1500,2000,3000};
 
   TH1D *ZMass = new TH1D("ZMass", "ZMass", 45, xbins);
-  TH1D *ZMass_0to500 = new TH1D("ZMass_0to500", "ZMass_0to500", 100, 0, 500);
-  TH1D *ZMass_60to120 = new TH1D("ZMass_60to120", "ZMass_60to120", 60, 60, 120);
   TH1D *ZPt = new TH1D("ZPt", "ZPt", 100, 0, 700);
   TH1D *ZRapidity = new TH1D("ZRapidity", "ZRapidity", 60, -3, 3);
   TH1D *ZEta = new TH1D("ZEta", "ZEta", 60, -8, 8);
   TH1D *ZPhi = new TH1D("ZPhi", "ZPhi", 50, -3.5, 3.5);
 
-  ZMass->Sumw2(); ZMass_0to500->Sumw2(); ZMass_60to120->Sumw2(); ZPt->Sumw2(); ZRapidity->Sumw2(); ZEta->Sumw2(); ZPhi->Sumw2();
+  ZMass->Sumw2(); ZPt->Sumw2(); ZRapidity->Sumw2(); ZEta->Sumw2(); ZPhi->Sumw2();
 
   if (fChain == 0) return;
 
-  Long64_t nentries = fChain->GetEntriesFast();
-  //Long64_t nentries = 10;
+  //Long64_t nentries = fChain->GetEntriesFast();
+  Long64_t nentries = 5000;
   cout<<"entries: "<<nentries<<endl;
 
   sum_weights = 0.0;
@@ -87,16 +85,16 @@ void mc13TeV::Loop()
       cout << "Events Processed :  " << jentry << endl;
     }
 
-    int index[pt->size()];
-    float ptnew[pt->size()];
+    int index[ptElec->size()];
+    float ptElecnew[ptElec->size()];
 
-    for(unsigned int el=0; el<pt->size(); el++)
+    for(unsigned int el=0; el<ptElec->size(); el++)
     {
-      ptnew[el]=pt->at(el);
+      ptElecnew[el]=ptElec->at(el);
     }
 
-    int sizer = sizeof(ptnew)/sizeof(ptnew[0]);
-    TMath::Sort(sizer,ptnew,index,true);
+    int sizer = sizeof(ptElecnew)/sizeof(ptElecnew[0]);
+    TMath::Sort(sizer,ptElecnew,index,true);
 
     Z_Mass=0.; Z_Rap=0.; Z_Eta=0.; Z_Pt=0.; Z_Phi=0.;
     good_elec = 0;
@@ -135,11 +133,11 @@ void mc13TeV::Loop()
 	    newscPhi.push_back(phiSC->at(index[k]));
 	    newscEnr.push_back(enSC->at(index[k]));
 
-	    newelePt.push_back(pt->at(index[k]));
-	    neweleEta.push_back(eta->at(index[k]));
-	    neweleEnr.push_back(energy->at(index[k]));
-	    newelePhi.push_back(phi->at(index[k]));
-	    neweleCharge.push_back(charge->at(index[k]));
+	    newelePt.push_back(ptElec->at(index[k]));
+	    neweleEta.push_back(etaElec->at(index[k]));
+	    neweleEnr.push_back(energyElec->at(index[k]));
+	    newelePhi.push_back(phiElec->at(index[k]));
+	    neweleCharge.push_back(chargeElec->at(index[k]));
 
 	  } // eta
 	} // ID
@@ -154,21 +152,21 @@ void mc13TeV::Loop()
 
 	  for(unsigned int i=0; i<newelePt.size(); i++)
 	  {
-	    elePt->Fill(newelePt[i],puWeights*theWeight);
-	    eleEta->Fill(neweleEta[i],puWeights*theWeight);
-	    scEt->Fill(newscEt[i],puWeights*theWeight);
-	    scEta->Fill(newscEta[i],puWeights*theWeight);
+	    elePt->Fill(newelePt[i],theWeight);
+	    eleEta->Fill(neweleEta[i],theWeight);
+	    scEt->Fill(newscEt[i],theWeight);
+	    scEta->Fill(newscEta[i],theWeight);
 	  }
 
-	  elePt_lead->Fill(newelePt.at(0),puWeights*theWeight);
-	  eleEta_lead->Fill(neweleEta.at(0),puWeights*theWeight);
-	  elePt_slead->Fill(newelePt.at(1),puWeights*theWeight);
-	  eleEta_slead->Fill(neweleEta.at(1),puWeights*theWeight);
+	  elePt_lead->Fill(newelePt.at(0),theWeight);
+	  eleEta_lead->Fill(neweleEta.at(0),theWeight);
+	  elePt_slead->Fill(newelePt.at(1),theWeight);
+	  eleEta_slead->Fill(neweleEta.at(1),theWeight);
 
-	  scEt_lead->Fill(newscEt.at(0),puWeights*theWeight);
-	  scEt_slead->Fill(newscEt.at(1),puWeights*theWeight);
-	  scEta_lead->Fill(newscEta.at(0),puWeights*theWeight);
-	  scEta_slead->Fill(newscEta.at(1),puWeights*theWeight);
+	  scEt_lead->Fill(newscEt.at(0),theWeight);
+	  scEt_slead->Fill(newscEt.at(1),theWeight);
+	  scEta_lead->Fill(newscEta.at(0),theWeight);
+	  scEta_slead->Fill(newscEta.at(1),theWeight);
 
 	  ele1.SetPtEtaPhiE(newelePt.at(0),neweleEta.at(0),newelePhi.at(0),neweleEnr.at(0));
 	  ele2.SetPtEtaPhiE(newelePt.at(1),neweleEta.at(1),newelePhi.at(1),neweleEnr.at(1));
@@ -181,13 +179,11 @@ void mc13TeV::Loop()
 	  Z_Eta = dielectron.Eta();
 	  Z_Phi = dielectron.Phi();
 
-	  ZMass_0to500->Fill(Z_Mass,puWeights*theWeight);
-	  ZMass_60to120->Fill(Z_Mass,puWeights*theWeight);
-	  ZMass->Fill(Z_Mass,puWeights*theWeight);
-	  ZPt->Fill(Z_Pt,puWeights*theWeight);
-	  ZRapidity->Fill(Z_Rap,puWeights*theWeight);
-	  ZEta->Fill(Z_Eta,puWeights*theWeight);
-	  ZPhi->Fill(Z_Phi,puWeights*theWeight);
+	  ZMass->Fill(Z_Mass,theWeight);
+	  ZPt->Fill(Z_Pt,theWeight);
+	  ZRapidity->Fill(Z_Rap,theWeight);
+	  ZEta->Fill(Z_Eta,theWeight);
+	  ZPhi->Fill(Z_Phi,theWeight);
 
 	} // pt
       } // good electrons
