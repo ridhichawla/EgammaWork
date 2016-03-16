@@ -198,29 +198,28 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     // all electron variables
     Int_t nGenElectrons;
 
-    std::vector<Int_t>   genlep_Id_;
-    std::vector<Int_t>   genlepMother_Id_;
+    //std::vector<Int_t>   genPhoton_Id_;
+    //std::vector<Int_t>   genlepMother_Id_;
     std::vector<Bool_t>  fromHProcessFinalState_;
     std::vector<Bool_t>  fromHProcessDecayed_;
 
-    std::vector<Float_t> genlep_Px_;
-    std::vector<Float_t> genlep_Py_;
-    std::vector<Float_t> genlep_Pz_;
-    std::vector<Float_t> genlep_Pt_;
-    std::vector<Float_t> genlep_Eta_;
-    std::vector<Float_t> genlep_Rap_;
-    std::vector<Float_t> genlep_Phi_;
-    std::vector<Float_t> genlep_En_;
-
-    std::vector<Float_t> genPostFSR_Pt_;
-    std::vector<Float_t> genPostFSR_Eta_;
-    std::vector<Float_t> genPostFSR_Phi_;
-    std::vector<Float_t> genPostFSR_En_;
-
+    std::vector<Float_t> genPhoton_Px_;
+    std::vector<Float_t> genPhoton_Py_;
+    std::vector<Float_t> genPhoton_Pz_;
     std::vector<Float_t> genPhoton_Pt_;
     std::vector<Float_t> genPhoton_Eta_;
+    std::vector<Float_t> genPhoton_Rap_;
     std::vector<Float_t> genPhoton_Phi_;
     std::vector<Float_t> genPhoton_En_;
+
+    std::vector<Float_t> genPostFSR_Px_;
+    std::vector<Float_t> genPostFSR_Py_;
+    std::vector<Float_t> genPostFSR_Pz_;
+    std::vector<Float_t> genPostFSR_Pt_;
+    std::vector<Float_t> genPostFSR_Eta_;
+    std::vector<Float_t> genPostFSR_Rap_;
+    std::vector<Float_t> genPostFSR_Phi_;
+    std::vector<Float_t> genPostFSR_En_;
 
     Int_t nElectrons;
 
@@ -372,7 +371,7 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   mu8_ele17     = "(HLT_Mu8_TrkIsoVVL_Ele17_CaloIdL_TrackIdL_IsoVL_v)(.*)";
   mu17_ele12    = "(HLT_Mu17_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v)(.*)";
   mu8_ele23     = "(HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_v)(.*)";
-  
+
   // triggers for Fake-Rate method
   Photon_22  = "(HLT_Photon22_v)(.*)";
   Photon_30  = "(HLT_Photon30_v)(.*)";
@@ -503,29 +502,28 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronTree_->Branch("nGenTau"    ,  &nGenTaus , "nGenTau/I");
   electronTree_->Branch("tauFlag", &tauFlag, "tauFlag/I");
 
-  electronTree_->Branch("genlep_Id", &genlep_Id_);
-  electronTree_->Branch("genlepMother_Id", &genlepMother_Id_);
+  //electronTree_->Branch("genlep_Id", &genlep_Id_);
+  //electronTree_->Branch("genlepMother_Id", &genlepMother_Id_);
   electronTree_->Branch("fromHProcessFinalState", &fromHProcessFinalState_);
   electronTree_->Branch("fromHProcessDecayed", &fromHProcessDecayed_);
 
-  electronTree_->Branch("genlep_Px"    ,  &genlep_Px_    );
-  electronTree_->Branch("genlep_Py"    ,  &genlep_Py_    );
-  electronTree_->Branch("genlep_Pz"    ,  &genlep_Pz_    );
-  electronTree_->Branch("genlep_Pt"    ,  &genlep_Pt_    );
-  electronTree_->Branch("genlep_Eta"   ,  &genlep_Eta_    );
-  electronTree_->Branch("genlep_Rap"   ,  &genlep_Rap_    );
-  electronTree_->Branch("genlep_Phi"   ,  &genlep_Phi_    );
-  electronTree_->Branch("genlep_En"    ,  &genlep_En_    );
-
-  electronTree_->Branch("genPostFSR_Pt"    ,  &genPostFSR_Pt_    );
-  electronTree_->Branch("genPostFSR_Eta"   ,  &genPostFSR_Eta_    );
-  electronTree_->Branch("genPostFSR_Phi"   ,  &genPostFSR_Phi_    );
-  electronTree_->Branch("genPostFSR_En"    ,  &genPostFSR_En_    );
-
+  electronTree_->Branch("genPhoton_Px"    ,  &genPhoton_Px_    );
+  electronTree_->Branch("genPhoton_Py"    ,  &genPhoton_Py_    );
+  electronTree_->Branch("genPhoton_Pz"    ,  &genPhoton_Pz_    );
   electronTree_->Branch("genPhoton_Pt"    ,  &genPhoton_Pt_    );
-  electronTree_->Branch("genPhoton_Eta"   ,  &genPhoton_Eta_    );
-  electronTree_->Branch("genPhoton_Phi"   ,  &genPhoton_Phi_    );
+  electronTree_->Branch("genPhoton_Eta"   ,  &genPhoton_Eta_   );
+  electronTree_->Branch("genPhoton_Rap"   ,  &genPhoton_Rap_   );
+  electronTree_->Branch("genPhoton_Phi"   ,  &genPhoton_Phi_   );
   electronTree_->Branch("genPhoton_En"    ,  &genPhoton_En_    );
+
+  electronTree_->Branch("genPostFSR_Px"   ,  &genPostFSR_Px_    );
+  electronTree_->Branch("genPostFSR_Py"   ,  &genPostFSR_Py_    );
+  electronTree_->Branch("genPostFSR_Pz"   ,  &genPostFSR_Pz_    );
+  electronTree_->Branch("genPostFSR_Pt"   ,  &genPostFSR_Pt_    );
+  electronTree_->Branch("genPostFSR_Eta"  ,  &genPostFSR_Eta_   );
+  electronTree_->Branch("genPostFSR_Rap"  ,  &genPostFSR_Rap_   );
+  electronTree_->Branch("genPostFSR_Phi"  ,  &genPostFSR_Phi_   );
+  electronTree_->Branch("genPostFSR_En"   ,  &genPostFSR_En_    );
 
   electronTree_->Branch("ptElec"    ,  &ptElec_    );
   electronTree_->Branch("etaElec"   ,  &etaElec_    );
@@ -687,13 +685,14 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   std::string photon120Filter("hltEG120HEFilter");
   std::string photon175Filter("hltEG175HEFilter");
 
-  /*bool trigResult = false;
-    for (unsigned int i=0; i<triggerHandle->size(); i++)
-    {
+  bool trigResult = false;
+  for (unsigned int i=0; i<triggerHandle->size(); i++)
+  {
     std::string trigName = triggerNames.triggerName(i);
-  //trigResult = triggerHandle->accept(i);
-  //cout<<"Name of Trigger = "<<trigName<<"   Trigger Result = "<<trigResult<<"   Trigger Number = "<<i<<endl;
-  }*/
+    trigResult = triggerHandle->accept(i);
+    //cout<<"Name of Trigger = "<<trigName<<"   Trigger Result = "<<trigResult<<"   Trigger Number = "<<i<<endl;
+    if(i==42) cout<<"trig result Ele23: "<<trigResult<<endl;
+  }
 
   singlePhoton = 0;
   prescalePhoton = 0;
@@ -776,14 +775,16 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   for (unsigned int i=0; i<triggerHandle->size(); i++)
   {
 
-   if(std::regex_match(triggerNames.triggerName(i),ele23_WPLoose)) Ele23_WPLoose = triggerHandle->accept(i);
-   if(std::regex_match(triggerNames.triggerName(i),ele27_WP85)) Ele27_WP85       = triggerHandle->accept(i);
-   if(std::regex_match(triggerNames.triggerName(i),isoMu20)) IsoMu20             = triggerHandle->accept(i);
-   if(std::regex_match(triggerNames.triggerName(i),ele17_ele12)) Ele17_Ele12     = triggerHandle->accept(i);
-   if(std::regex_match(triggerNames.triggerName(i),mu8_ele17)) Mu8_Ele17         = triggerHandle->accept(i);
-   if(std::regex_match(triggerNames.triggerName(i),mu17_ele12)) Mu17_Ele12       = triggerHandle->accept(i);
-   if(std::regex_match(triggerNames.triggerName(i),mu8_ele23)) Mu8_Ele23         = triggerHandle->accept(i);
-    
+    if(std::regex_match(triggerNames.triggerName(i),ele23_WPLoose)) Ele23_WPLoose = triggerHandle->accept(i);
+    if(std::regex_match(triggerNames.triggerName(i),ele27_WP85)) Ele27_WP85       = triggerHandle->accept(i);
+    if(std::regex_match(triggerNames.triggerName(i),isoMu20)) IsoMu20             = triggerHandle->accept(i);
+    if(std::regex_match(triggerNames.triggerName(i),ele17_ele12)) Ele17_Ele12     = triggerHandle->accept(i);
+    if(std::regex_match(triggerNames.triggerName(i),mu8_ele17)) Mu8_Ele17         = triggerHandle->accept(i);
+    if(std::regex_match(triggerNames.triggerName(i),mu17_ele12)) Mu17_Ele12       = triggerHandle->accept(i);
+    if(std::regex_match(triggerNames.triggerName(i),mu8_ele23)) Mu8_Ele23         = triggerHandle->accept(i);
+
+    //if(i==42) cout<<"Ele23: "<<Ele23_WPLoose<<endl;
+
     if(photon22){
       if(std::regex_match(triggerNames.triggerName(i),Photon_22)) {
 	singlePhoton = triggerHandle->accept(i);
@@ -843,7 +844,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   }
 
   //cout<<"singlePhoton: "<<singlePhoton<<"   "<<"prescalePhoton: "<<prescalePhoton<<endl;
-
   //cout<<"3"<<endl;
 
   // Get rho value
@@ -882,39 +882,39 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     for(size_t i = 0; i < genParticles->size(); ++i){
       const GenParticle &genlep = (*genParticles)[i];
 
-      genlep_Id_.push_back(genlep.pdgId());
-      if(abs(genlep.pdgId())==22) genlepMother_Id_.push_back(genlep.mother(0)->pdgId());
+      //genlep_Id_.push_back(genlep.pdgId());
+      //if(abs(genlep.pdgId())==22) genlepMother_Id_.push_back(genlep.mother(0)->pdgId());
 
       fromHProcessFinalState_.push_back(genlep.fromHardProcessFinalState());
       fromHProcessDecayed_.push_back(genlep.fromHardProcessDecayed());
 
       nGenElectrons++;
 
-      genlep_Px_.push_back(genlep.px());
-      genlep_Py_.push_back(genlep.py());
-      genlep_Pz_.push_back(genlep.pz());
-      genlep_Pt_.push_back(genlep.pt());
-      genlep_Eta_.push_back(genlep.eta());
-      genlep_Rap_.push_back(genlep.rapidity());
-      genlep_Phi_.push_back(genlep.phi());
-      genlep_En_.push_back(genlep.energy());
+      // gen Photon
+      if(abs(genlep.pdgId())==22 && abs(genlep.mother(0)->pdgId())==11){
+
+	genPhoton_Px_.push_back(genlep.px());
+	genPhoton_Py_.push_back(genlep.py());
+	genPhoton_Pz_.push_back(genlep.pz());
+	genPhoton_Pt_.push_back(genlep.pt());
+	genPhoton_Eta_.push_back(genlep.eta());
+	genPhoton_Rap_.push_back(genlep.rapidity());
+	genPhoton_Phi_.push_back(genlep.phi());
+	genPhoton_En_.push_back(genlep.energy());
+      }
 
       // gen Post FSR
       if(abs(genlep.pdgId())==11 && genlep.fromHardProcessFinalState()==1){
 
+	genPostFSR_Px_.push_back(genlep.px());
+	genPostFSR_Py_.push_back(genlep.py());
+	genPostFSR_Pz_.push_back(genlep.pz());
 	genPostFSR_Pt_.push_back(genlep.pt());
 	genPostFSR_Eta_.push_back(genlep.eta());
+	genPostFSR_Rap_.push_back(genlep.rapidity());
 	genPostFSR_Phi_.push_back(genlep.phi());
 	genPostFSR_En_.push_back(genlep.energy());
 
-      }
-
-      if(abs(genlep.pdgId())==22 && abs(genlep.mother(0)->pdgId())==11){
-
-	genPhoton_Pt_.push_back(genlep.pt());
-	genPhoton_Eta_.push_back(genlep.eta());
-	genPhoton_Phi_.push_back(genlep.phi());
-	genPhoton_En_.push_back(genlep.energy());
       }
 
       // Separating the taus coming from Z decay
@@ -1076,12 +1076,12 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	printCutFlowResult(fullCutFlowData);
 
 	// Example of how to find the ID decision with one cut removed, this could be needed for N-1 studies.
-	const int cutIndexToMask = 7; 
+	const int cutIndexToMask = 2; 
 	// Here we masked the cut by cut index, but you can also do it by cut name string.
 	vid::CutFlowResult maskedCutFlowData = fullCutFlowData.getCutFlowResultMasking(cutIndexToMask);
 	printf("DEBUG CutFlow, the result with cut %s masked out\n", maskedCutFlowData.getNameAtIndex(cutIndexToMask).c_str());
 	printCutFlowResult(maskedCutFlowData);
-	}
+      }
 
       vid::CutFlowResult mediumID_Pt          = (*medium_id_cutflow)[el].getCutFlowResultMasking("MinPtCut_0");
       vid::CutFlowResult mediumID_ScEta       = (*medium_id_cutflow)[el].getCutFlowResultMasking("GsfEleSCEtaMultiRangeCut_0");
@@ -1099,6 +1099,8 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       isPassMedium_NoPt_.push_back(mediumID_Pt.cutFlowPassed());
       isPassMedium_NoScEta_.push_back(mediumID_ScEta.cutFlowPassed());
       isPassMedium_NoDEta_.push_back(mediumID_DEta.cutFlowPassed());
+      //cout<<"isPassMedium_NoDEta: "<<mediumID_DEta.cutFlowPassed()<<endl;
+      
       isPassMedium_NoDPhi_.push_back(mediumID_DPhi.cutFlowPassed());
       isPassMedium_NoSigmaEtaEta_.push_back(mediumID_SigmaEtaEta.cutFlowPassed());
       isPassMedium_NoHOverE_.push_back(mediumID_HOverE.cutFlowPassed());
@@ -1205,29 +1207,28 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   if(misMC && misSIG){
 
-    genlep_Id_.clear();
-    genlepMother_Id_.clear();
+    //genlep_Id_.clear();
+    //genlepMother_Id_.clear();
     fromHProcessFinalState_.clear();
     fromHProcessDecayed_.clear();
 
-    genlep_Pt_.clear();
-    genlep_Px_.clear();
-    genlep_Py_.clear();
-    genlep_Pz_.clear();
-    genlep_Eta_.clear();
-    genlep_Rap_.clear();
-    genlep_Phi_.clear();
-    genlep_En_.clear();
-
-    genPostFSR_Pt_.clear();
-    genPostFSR_Eta_.clear();
-    genPostFSR_Phi_.clear();
-    genPostFSR_En_.clear();
-
     genPhoton_Pt_.clear();
+    genPhoton_Px_.clear();
+    genPhoton_Py_.clear();
+    genPhoton_Pz_.clear();
     genPhoton_Eta_.clear();
+    genPhoton_Rap_.clear();
     genPhoton_Phi_.clear();
     genPhoton_En_.clear();
+
+    genPostFSR_Px_.clear();
+    genPostFSR_Py_.clear();
+    genPostFSR_Pz_.clear();
+    genPostFSR_Pt_.clear();
+    genPostFSR_Eta_.clear();
+    genPostFSR_Rap_.clear();
+    genPostFSR_Phi_.clear();
+    genPostFSR_En_.clear();
   }
 
   ptElec_.clear();
