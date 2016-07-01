@@ -261,14 +261,10 @@ void unfold_RMatrix() {
 
       }
 
-      //if(jentry==0 && massGPre < 10.) continue;        // Gen Mass cut ----- for 50 to inf sample
-
-      //if(genPreFSR_Pt->size() != 2) cout<<"Gen PreFSR size: "<<genPreFSR_Pt->size()<<"   "<<"mass: "<<massGPre<<endl;
+      if(jentry==1 && massGPre > 100.) continue;        // Gen Mass cut ----- for 50 to inf sample
 
       if(!tauFlag && genPreFSR_Pt->size() == 2) {
       //if(jentry==0 && tauFlag && genPreFSR_Pt->size() != 2) continue;
-
-	if(genPostFSR_Pt->size()>2.) cout<<"need the condition"<<endl;
 
 	if(Ele23_WPLoose) {
 	  if(ptElec->size()>=2.) {
