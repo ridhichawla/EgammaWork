@@ -170,8 +170,8 @@ void unfold_RMatrix() {
     file[jentry] = new TFile(Form("detRes_Unfold/Systematics/Mass_%dto%d.root",mass[jentry],mass[jentry+1]),"RECREATE");
     TTree *tree = new TTree("tree"," after preselections tree");
 
-    //double lumi_Weight = xsec[jentry]/sumofWts[jentry];
-    double lumi_Weight = xsec[jentry]/noEvts[jentry];
+    double lumi_Weight = xsec[jentry]/sumofWts[jentry];
+    //double lumi_Weight = xsec[jentry]/noEvts[jentry];
     cout<<"DY Sample: "<<mass[jentry]<<"to"<<mass[jentry+1]<<endl;
 
     int mediumId, dzMaskId, passId;
