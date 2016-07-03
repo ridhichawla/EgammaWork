@@ -10,14 +10,14 @@ int insideMassRange(double m)
 
 void treeRead1() 
 {
-  const char *file1[2] = {"DYEE_final","DY_M10to3500"};
+  const char *file1[2] = {"DYEE_final","DY_AltSig_M10to3500"};
 
   char name[200];
   double massReco, massGen, lumiWeight, genWeight, PUWeight;
   char isReco, isGen, BB, BE, EE;
 
-  const int nBins=43;
-  Double_t xbin[44] = {15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 64, 68, 72, 76, 81, 86, 91, 96, 101, 106, 110, 115, 120, 126, 133, 141, 150, 160, 171, 185, 200, 220, 243, 273, 320, 380, 440, 510, 600, 700, 830, 1000, 1500, 3000};
+  //const int nBins=43;
+  //Double_t xbin[44] = {15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 64, 68, 72, 76, 81, 86, 91, 96, 101, 106, 110, 115, 120, 126, 133, 141, 150, 160, 171, 185, 200, 220, 243, 273, 320, 380, 440, 510, 600, 700, 830, 1000, 1500, 3000};
   //Double_t xbin[32] = {15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 120, 126, 133, 141, 150, 160, 171, 185, 200, 220, 243, 273, 320, 380, 440, 510, 600, 700, 830, 1000, 1500, 3000};
 
   TH1D *reco_EEMass[2]; TH1D *gen_EEMass[2]; TH2D *RespMatrix[2]; TH2D *isMiss_RespMatrix[2]; TH2D *isFake_RespMatrix[2];
@@ -78,7 +78,7 @@ void treeRead1()
       		//if (!insideMassRange(massReco) &&  insideMassRange(massGen)) resp_DetRes->Fill(massReco, massGen, scale);
       		//else if ( insideMassRange(MassReco) && !insideMassRange(massGen)) resp_DetRes->Fill(massReco, massGen, scale);
 
-      		resp_DetRes[i]->Fill(massReco, massGen, scale);
+		if(insideMassRange(massReco) && insideMassRange(massGen)) resp_DetRes[i]->Fill(massReco, massGen, scale);
         }
       }
     }
