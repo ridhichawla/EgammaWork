@@ -38,27 +38,26 @@ void unfold_RMatrix() {
 
   double xsec[11] = {18609.9/3,5789./3,226./3,7.68/3,0.423/3,0.24/3,0.036/3,0.03/3,0.0159/3,0.00201/3,0.00054/3};
   double sumofWts[11] = {758771667841.549683,150453917158.292908,219884886.214768,7008726.024242,122990.185607,69998.861766,11080.956088,9415.627747,4893.463037,664.033593,159.615701};
-  
+
   //double xsec[8] = {18609.9/3,1975.,19.32,2.731,0.241,0.01678,0.00139,0.00008948};
-  //double noEvts[8] = {631905.,2984400.,100000.,100000.,100000.,100000.,100000.,100000.};
+  //double noEvts[8] = {669729.,2984400.,100000.,100000.,100000.,100000.,100000.,100000.};
 
   workdir = "/tmp/rchawla/eos/cms/store/group/phys_higgs/cmshww/arun/DYAnalysis_76X_Calibrated/DY_Signal/";
   InputFiles_signal_DY.clear();
 
   InputFiles_signal_DY.push_back(TFile::Open(workdir+"DY_10to50.root"));
-  InputFiles_signal_DY.push_back(TFile::Open(workdir+"DY_50toInf.root"));
-  InputFiles_signal_DY.push_back(TFile::Open(workdir+"DY_100to200.root"));
-  InputFiles_signal_DY.push_back(TFile::Open(workdir+"DY_200to400.root"));
-  InputFiles_signal_DY.push_back(TFile::Open(workdir+"DY_400to500.root"));
-  InputFiles_signal_DY.push_back(TFile::Open(workdir+"DY_500to700.root"));
-  InputFiles_signal_DY.push_back(TFile::Open(workdir+"DY_700to800.root"));
-  InputFiles_signal_DY.push_back(TFile::Open(workdir+"DY_800to1000.root"));
-  InputFiles_signal_DY.push_back(TFile::Open(workdir+"DY_1000to1500.root"));
-  InputFiles_signal_DY.push_back(TFile::Open(workdir+"DY_1500to2000.root"));
-  InputFiles_signal_DY.push_back(TFile::Open(workdir+"DY_2000to3000.root"));
+    InputFiles_signal_DY.push_back(TFile::Open(workdir+"DY_50toInf.root"));
+    InputFiles_signal_DY.push_back(TFile::Open(workdir+"DY_100to200.root"));
+    InputFiles_signal_DY.push_back(TFile::Open(workdir+"DY_200to400.root"));
+    InputFiles_signal_DY.push_back(TFile::Open(workdir+"DY_400to500.root"));
+    InputFiles_signal_DY.push_back(TFile::Open(workdir+"DY_500to700.root"));
+    InputFiles_signal_DY.push_back(TFile::Open(workdir+"DY_700to800.root"));
+    InputFiles_signal_DY.push_back(TFile::Open(workdir+"DY_800to1000.root"));
+    InputFiles_signal_DY.push_back(TFile::Open(workdir+"DY_1000to1500.root"));
+    InputFiles_signal_DY.push_back(TFile::Open(workdir+"DY_1500to2000.root"));
+    InputFiles_signal_DY.push_back(TFile::Open(workdir+"DY_2000to3000.root"));
 
   /*InputFiles_signal_DY.push_back(TFile::Open(workdir+"MG_M5_50.root"));
-  //InputFiles_signal_DY.push_back(TFile::Open(workdir+"DY_10to50.root"));
   InputFiles_signal_DY.push_back(TFile::Open(workdir+"Powheg_50_120.root"));
   InputFiles_signal_DY.push_back(TFile::Open(workdir+"Powheg_120_200.root"));
   InputFiles_signal_DY.push_back(TFile::Open(workdir+"Powheg_200_400.root"));
@@ -167,7 +166,8 @@ void unfold_RMatrix() {
     T1->SetBranchAddress("eta_Ele23", &eta_Ele23);
     T1->SetBranchAddress("phi_Ele23", &phi_Ele23);
 
-    file[jentry] = new TFile(Form("detRes_Unfold/Systematics/Mass_%dto%d.root",mass[jentry],mass[jentry+1]),"RECREATE");
+    file[jentry] = new TFile(Form("DYEE_%dto%d.root",mass[jentry],mass[jentry+1]),"RECREATE");
+    //file[jentry] = new TFile(Form("detResponse/altSignal/Checks/DYEE_2_%dto%d.root",mass[jentry],mass[jentry+1]),"RECREATE");
     TTree *tree = new TTree("tree"," after preselections tree");
 
     double lumi_Weight = xsec[jentry]/sumofWts[jentry];
@@ -213,160 +213,164 @@ void unfold_RMatrix() {
 	cout << "Events Processed :  " << i << endl;
       }
 
-      // Sorting Reco level
-      int index1[ptElec->size()];
-      float pt1[ptElec->size()];
+      //if(i%2 == 0){
+	//cout<<"entry: "<<i<<endl;
 
-      for(unsigned int el=0; el<ptElec->size(); el++)
-      {
-	pt1[el]=ptElec->at(el);
-      }
+	// Sorting Reco level
+	int index1[ptElec->size()];
+	float pt1[ptElec->size()];
 
-      int size = sizeof(pt1)/sizeof(pt1[0]);
-      TMath::Sort(size,pt1,index1,true);
+	for(unsigned int el=0; el<ptElec->size(); el++)
+	{
+	  pt1[el]=ptElec->at(el);
+	}
 
-      // Sorting Post Gen level
-      int index2[genPostFSR_Pt->size()];
-      float pt2[genPostFSR_Pt->size()];
+	int size = sizeof(pt1)/sizeof(pt1[0]);
+	TMath::Sort(size,pt1,index1,true);
 
-      for(unsigned int gn=0; gn<genPostFSR_Pt->size(); gn++)
-      {
-	pt2[gn]=genPostFSR_Pt->at(gn);
-      }
+	// Sorting Post Gen level
+	int index2[genPostFSR_Pt->size()];
+	float pt2[genPostFSR_Pt->size()];
 
-      int sizen = sizeof(pt2)/sizeof(pt2[0]);
-      TMath::Sort(sizen,pt2,index2,true);
+	for(unsigned int gn=0; gn<genPostFSR_Pt->size(); gn++)
+	{
+	  pt2[gn]=genPostFSR_Pt->at(gn);
+	}
 
-      trigMatch_lead = false; trigMatch_slead = false;
-      massGPre=0.;massReco=-999.; massGen=-999.;
-      dR = 0.; dR1 = 0.; dR2 = 0.;
-      isReco = false; isGen = false;
-      BB = false; BE = false; EE = false;
-      mediumId = 0; dzMaskId = 0; passId = 0;
-      newelePt.clear(); neweleEta.clear(); neweleEnr.clear(); newelePhi.clear(); newscEta.clear();
-      newgenPt.clear(); newgenEta.clear(); newgenEnr.clear(); newgenPhi.clear();
+	int sizen = sizeof(pt2)/sizeof(pt2[0]);
+	TMath::Sort(sizen,pt2,index2,true);
 
-      // PU Weight
-      int bin = 0;
-      //double puWeights = 1.0;
-      bin = weights->GetXaxis()->FindBin(nPUTrue);
-      double puweight = weights->GetBinContent(bin);
+	trigMatch_lead = false; trigMatch_slead = false;
+	massGPre=0.;massReco=-999.; massGen=-999.;
+	dR = 0.; dR1 = 0.; dR2 = 0.;
+	isReco = false; isGen = false;
+	BB = false; BE = false; EE = false;
+	mediumId = 0; dzMaskId = 0; passId = 0;
+	newelePt.clear(); neweleEta.clear(); neweleEnr.clear(); newelePhi.clear(); newscEta.clear();
+	newgenPt.clear(); newgenEta.clear(); newgenEnr.clear(); newgenPhi.clear();
 
-      if(genPreFSR_Pt->size() == 2){
-	genPre1.SetPtEtaPhiE(genPreFSR_Pt->at(0),genPreFSR_Eta->at(0),genPreFSR_Phi->at(0),genPreFSR_En->at(0));
-	genPre2.SetPtEtaPhiE(genPreFSR_Pt->at(1),genPreFSR_Eta->at(1),genPreFSR_Phi->at(1),genPreFSR_En->at(1));
+	// PU Weight
+	int bin = 0;
+	//double puWeights = 1.0;
+	bin = weights->GetXaxis()->FindBin(nPUTrue);
+	double puweight = weights->GetBinContent(bin);
 
-	diGen=genPre1+genPre2;
-	massGPre=diGen.M();
+	if(genPreFSR_Pt->size() == 2){
+	  genPre1.SetPtEtaPhiE(genPreFSR_Pt->at(0),genPreFSR_Eta->at(0),genPreFSR_Phi->at(0),genPreFSR_En->at(0));
+	  genPre2.SetPtEtaPhiE(genPreFSR_Pt->at(1),genPreFSR_Eta->at(1),genPreFSR_Phi->at(1),genPreFSR_En->at(1));
 
-      }
+	  diGen=genPre1+genPre2;
+	  massGPre=diGen.M();
 
-      if(jentry==1 && massGPre > 100.) continue;        // Gen Mass cut ----- for 50 to inf sample
+	}
 
-      if(!tauFlag && genPreFSR_Pt->size() == 2) {
-      //if(jentry==0 && tauFlag && genPreFSR_Pt->size() != 2) continue;
+	if(jentry==1 && massGPre > 100.) continue;        // Gen Mass cut ----- for 50 to inf sample
+	//if(jentry==0 && massGPre < 10.) continue;
 
-	if(Ele23_WPLoose) {
-	  if(ptElec->size()>=2.) {
+	if(!tauFlag && genPreFSR_Pt->size() == 2) {
 
-	    for(int j=0;j<ptElec->size();j++){
+	  if(Ele23_WPLoose) {
+	    if(ptElec->size()>=2.) {
 
-	      mediumId = passMediumId->at(index1[j]);
+	      for(int j=0;j<ptElec->size();j++){
 
-	      if(mediumId) {
+		mediumId = passMediumId->at(index1[j]);
 
-		if(fabs(etaSC->at(index1[j])) < 2.5 && !(fabs(etaSC->at(index1[j])) > 1.4442 && fabs(etaSC->at(index1[j])) < 1.566)){
+		if(mediumId) {
 
-		  newelePt.push_back(ptElec->at(index1[j]));
-		  neweleEta.push_back(etaElec->at(index1[j]));
-		  newscEta.push_back(etaSC->at(index1[j]));
-		  neweleEnr.push_back(energyElec->at(index1[j]));
-		  newelePhi.push_back(phiElec->at(index1[j]));
+		  if(fabs(etaSC->at(index1[j])) < 2.5 && !(fabs(etaSC->at(index1[j])) > 1.4442 && fabs(etaSC->at(index1[j])) < 1.566)){
 
-		} // eta
-	      } // ID
-	    } // pt size
-	  } // pt size >= 2
-	} // trigger
+		    newelePt.push_back(ptElec->at(index1[j]));
+		    neweleEta.push_back(etaElec->at(index1[j]));
+		    newscEta.push_back(etaSC->at(index1[j]));
+		    neweleEnr.push_back(energyElec->at(index1[j]));
+		    newelePhi.push_back(phiElec->at(index1[j]));
 
-
-
-	if(newelePt.size() == 2){
-
-	  for(unsigned int k = 0; k < eta_Ele23->size(); k++){
-
-	    double dR1_comp = 1000.;
-	    double dR2_comp = 1000.;
-
-	    dR1 = deltaR(neweleEta.at(0), newelePhi.at(0), eta_Ele23->at(k), phi_Ele23->at(k));
-	    dR2 = deltaR(neweleEta.at(1), newelePhi.at(1), eta_Ele23->at(k), phi_Ele23->at(k));
-
-	    if(dR1 < 0.1){
-	      if (dR1 < dR1_comp)
-	      { 
-		dR1_comp = dR1;
-		trigMatch_lead = true;
-	      }
-	    } // dR1
-
-	    if(dR2 < 0.1){
-	      if (dR2 < dR2_comp)
-	      { 
-		dR2_comp = dR2; 
-		trigMatch_slead = true;
-	      }
-	    } // dR2
-	  } // eta_Ele23
-
-	  if(trigMatch_lead || trigMatch_slead){
-	    if(newelePt.at(0) > 30. && newelePt.at(1) > 10.){
-
-	      isReco = true;
-	      ele1.SetPtEtaPhiE(newelePt.at(0),neweleEta.at(0),newelePhi.at(0),neweleEnr.at(0));
-	      ele2.SetPtEtaPhiE(newelePt.at(1),neweleEta.at(1),newelePhi.at(1),neweleEnr.at(1));
-
-	      dielectron=ele1+ele2;
-	      massReco = dielectron.M();
-
-	      if(fabs(newscEta.at(0)) < 1.4442 && fabs(newscEta.at(1)) < 1.4442) BB = true;
-	      if((fabs(newscEta.at(0)) < 1.4442 && fabs(newscEta.at(1)) > 1.566) || (fabs(newscEta.at(0)) > 1.566 && fabs(newscEta.at(1)) < 1.4442)) BE = true;
-	      if(fabs(newscEta.at(0)) > 1.566 && fabs(newscEta.at(1)) > 1.566) EE = true;
-	    } // pt on reco
-	  }
+		  } // eta
+		} // ID
+	      } // pt size
+	    } // pt size >= 2
+	  } // trigger
 
 
-	  if(genPostFSR_Pt->size() >= 2.){  
-	    for(unsigned int k=0;k<genPostFSR_Pt->size();k++){
+	  if(newelePt.size() == 2){
 
-	      if(fabs(genPostFSR_Eta->at(index2[k])) < 2.5 && !(fabs(genPostFSR_Eta->at(index2[k])) > 1.4442 && fabs(genPostFSR_Eta->at(index2[k])) < 1.566)){
+	    for(unsigned int k = 0; k < eta_Ele23->size(); k++){
 
-		newgenPt.push_back(genPostFSR_Pt->at(index2[k]));
-		newgenEta.push_back(genPostFSR_Eta->at(index2[k]));
-		newgenEnr.push_back(genPostFSR_En->at(index2[k]));
-		newgenPhi.push_back(genPostFSR_Phi->at(index2[k]));
-	      } // eta on gen
-	    } // post FSR size
-	  } // post FSR size == 2
+	      double dR1_comp = 1000.;
+	      double dR2_comp = 1000.;
 
-	  if(newgenPt.size() == 2){
-	    if(newgenPt.at(0) > 30. && newgenPt.at(1) > 10.){
+	      dR1 = deltaR(neweleEta.at(0), newelePhi.at(0), eta_Ele23->at(k), phi_Ele23->at(k));
+	      dR2 = deltaR(neweleEta.at(1), newelePhi.at(1), eta_Ele23->at(k), phi_Ele23->at(k));
 
-	      isGen = true;
-	      gen1.SetPtEtaPhiE(newgenPt.at(0),newgenEta.at(0),newgenPhi.at(0),newgenEnr.at(0));
-	      gen2.SetPtEtaPhiE(newgenPt.at(1),newgenEta.at(1),newgenPhi.at(1),newgenEnr.at(1));
+	      if(dR1 < 0.1){
+		if (dR1 < dR1_comp)
+		{ 
+		  dR1_comp = dR1;
+		  trigMatch_lead = true;
+		}
+	      } // dR1
 
-	      digen=gen1+gen2;
-	      massGen=digen.M();
-	    } // acceptance on gen
-	  } // newgen size == 2
-	} // newele size == 2
+	      if(dR2 < 0.1){
+		if (dR2 < dR2_comp)
+		{ 
+		  dR2_comp = dR2; 
+		  trigMatch_slead = true;
+		}
+	      } // dR2
+	    } // eta_Ele23
 
-	lumiWeight = lumi_Weight;
-	genWeight = theWeight;
-	PUWeight = puweight;
+	    if(trigMatch_lead || trigMatch_slead){
+	      if(newelePt.at(0) > 30. && newelePt.at(1) > 10.){
 
-	tree->Fill();
-      } // pre FSR == 2
+		isReco = true;
+		ele1.SetPtEtaPhiE(newelePt.at(0),neweleEta.at(0),newelePhi.at(0),neweleEnr.at(0));
+		ele2.SetPtEtaPhiE(newelePt.at(1),neweleEta.at(1),newelePhi.at(1),neweleEnr.at(1));
+
+		dielectron=ele1+ele2;
+		massReco = dielectron.M();
+
+		if(fabs(newscEta.at(0)) < 1.4442 && fabs(newscEta.at(1)) < 1.4442) BB = true;
+		if((fabs(newscEta.at(0)) < 1.4442 && fabs(newscEta.at(1)) > 1.566) || (fabs(newscEta.at(0)) > 1.566 && fabs(newscEta.at(1)) < 1.4442)) BE = true;
+		if(fabs(newscEta.at(0)) > 1.566 && fabs(newscEta.at(1)) > 1.566) EE = true;
+	      } // pt on reco
+	    }
+
+
+	    if(genPostFSR_Pt->size() >= 2.){  
+	      for(unsigned int k=0;k<genPostFSR_Pt->size();k++){
+
+		if(fabs(genPostFSR_Eta->at(index2[k])) < 2.5 && !(fabs(genPostFSR_Eta->at(index2[k])) > 1.4442 && fabs(genPostFSR_Eta->at(index2[k])) < 1.566)){
+
+		  newgenPt.push_back(genPostFSR_Pt->at(index2[k]));
+		  newgenEta.push_back(genPostFSR_Eta->at(index2[k]));
+		  newgenEnr.push_back(genPostFSR_En->at(index2[k]));
+		  newgenPhi.push_back(genPostFSR_Phi->at(index2[k]));
+		} // eta on gen
+	      } // post FSR size
+	    } // post FSR size == 2
+
+	    if(newgenPt.size() == 2){
+	      if(newgenPt.at(0) > 30. && newgenPt.at(1) > 10.){
+
+		isGen = true;
+		gen1.SetPtEtaPhiE(newgenPt.at(0),newgenEta.at(0),newgenPhi.at(0),newgenEnr.at(0));
+		gen2.SetPtEtaPhiE(newgenPt.at(1),newgenEta.at(1),newgenPhi.at(1),newgenEnr.at(1));
+
+		digen=gen1+gen2;
+		massGen=digen.M();
+	      } // acceptance on gen
+	    } // newgen size == 2
+	  } // newele size == 2
+
+	  lumiWeight = lumi_Weight;
+	  genWeight = theWeight;
+	  PUWeight = puweight;
+
+	  tree->Fill();
+	} // pre FSR == 2
+      //} // entry%2 !=0
+
     } // event
 
     file[jentry]->Write();
