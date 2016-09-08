@@ -66,15 +66,7 @@ void RooUnfold()
   RooUnfoldResponse response4 (hMeas4, hTrue4, h2Resp4); // FSR
   response4.UseOverflow(true);
 
-
-  cout << "==================================== UNFOLD ===================================" << endl;
-
-  RooUnfoldBayes   unfold1 (&response1, hMeas1, 15);
-  RooUnfoldBayes   unfold2 (&response2, hMeas2, 15);
-  //RooUnfoldBayes   unfold3 (&response3, hMeas3, 15);
-  RooUnfoldBayes   unfold4 (&response4, hMeas4, 15);
-
-  //TH1D* hUnfold= (TH1D*) unfold.Hreco();
+  // ******************************** Fakes ************************************
   cout<<"Fakes1 : "<<response1.FakeEntries()<<endl;
   cout<<"Fakes2 : "<<response2.FakeEntries()<<endl;
   //cout<<"Fakes3 : "<<response3.FakeEntries()<<endl;
