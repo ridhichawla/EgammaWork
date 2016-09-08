@@ -8,14 +8,14 @@
 #include "/home/ridhi/RooUnfold/src/RooUnfold.h"
 
 
-void Calculation_DiffXsec(TH1D* h_yield, RooUnfoldResponse* UnfoldRes2,
+void Calculation_DiffXsec(TH1D* h_yield, RooUnfoldResponse* UnfoldRes1,
 			  TH1D* h_EfficiencySF, TH1D* h_AccEff,
 			  RooUnfoldResponse* UnfoldRes4, TH1D *h_xSec_dM_FSRCorr)
 {
 
 
   // -- Unfolding correction for detector resolution: apply on the data before applying Acc*Eff correction -- //
-  RooUnfoldBayes *UnfoldBayes1 = new RooUnfoldBayes(UnfoldRes2, h_yield, 15); //Unfolding Data Histo
+  RooUnfoldBayes *UnfoldBayes1 = new RooUnfoldBayes(UnfoldRes1, h_yield, 15); //Unfolding Data Histo
   Unfolded_Data = (TH1D*)UnfoldBayes1->Hreco();
   Unfolded_Data->SetName("h_yield_Unfolded");
 
@@ -286,7 +286,7 @@ void FinalCorrections_v1() {
 	
   ObtainYieldHistogram(hData, hEMu, hWZ, hZZ, hDijet, hWjet, h_yield); //Background Subtracted Data Histo
 	
-  Calculation_DiffXsec(h_yield, UnfoldRes2, h_EfficiencySF, h_AccEff, 
+  Calculation_DiffXsec(h_yield, UnfoldRes1, h_EfficiencySF, h_AccEff, 
 		       UnfoldRes4, h_xSec_dM_FSRCorr);
 
   Obtain_dSigma_dM(h_diffXsec_aMCNLO, h_xSec_dM_FSRCorr_aMCNLO);
