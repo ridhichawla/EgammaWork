@@ -156,8 +156,6 @@ void selectDenAndNumForFR_BKG() {
     cout<<"Background Sample: "<<bkg[jentry]<<endl;
 
     double Pt, Eta, Sigma_eta;
-    double massGen;
-    TLorentzVector gen1,gen2,diGen;
     vector <double> passingElectron;
 
     Double_t x1bin[6] = {10,20,30,40,50,10000};
@@ -209,24 +207,12 @@ void selectDenAndNumForFR_BKG() {
       int size = sizeof(pt)/sizeof(pt[0]);
       TMath::Sort(size,pt,index,true);
 
-      massGen = 0.;
       Pt = 0.;
       Eta = 0.;
       Sigma_eta = 0.;
       passingElectron.clear();
 
       double PUWeight = 1.0;
-
-      if(genPreFSR_Pt->size() == 2){
-	gen1.SetPtEtaPhiE(genPreFSR_Pt->at(0),genPreFSR_Eta->at(0),genPreFSR_Phi->at(0),genPreFSR_En->at(0));
-	gen2.SetPtEtaPhiE(genPreFSR_Pt->at(1),genPreFSR_Eta->at(1),genPreFSR_Phi->at(1),genPreFSR_En->at(1));
-
-	diGen=gen1+gen2;
-	massGen=diGen.M();
-      }
-
-      if(jentry==1 && massGen >= 100.) continue;
-      if(tauFlag) continue;
 
       int bin = 0;
       double puWeights = 1.0;
@@ -253,20 +239,20 @@ void selectDenAndNumForFR_BKG() {
 
       for(int j=0;j<passingElectron.size();j++){
 
-	cout<<"passingElectron ["<<j<<"] = "<<j<<endl;
+	cout<<"passingElectron ["<<j<<"] = "<<passingElectron.at(j)<<endl;
 
-	Pt = ptElec->at(j);
-	Eta = etaElec->at(j);
-	Sigma_eta = full5x5_sigmaIetaIeta->at(j);
+	Pt = ptElec->at(passingElectron[j]);
+	Eta = etaElec->at(passingElectron[j]);
+	Sigma_eta = full5x5_sigmaIetaIeta->at(passingElectron[j]);
 
-	cout<<"Pt["<<j<<"] = "<<Pt<<"   Eta["<<j<<"] = "<<Eta<<"   Sigma_eta["<<j<<"] = "<<Sigma_eta<<endl;
+	cout<<"Pt["<<j<<"] = "<<Pt<<"   Eta["<<j<<"] = "<<Eta<<"   sigma_ieta_ieta["<<j<<"] = "<<Sigma_eta<<endl;
 
-	cout<<"Medium ID["<<j<<"] = "<<passMediumId->at(j)<<endl;
-	cout<<"Medium ID with sigma eta masked["<<j<<"] = "<<isPassMedium_NoSigmaEtaEta->at(j)<<endl;
+	//cout<<"Medium ID["<<j<<"] = "<<passMediumId->at(passingElectron[j])<<endl;
+	cout<<"Medium ID with sigma eta masked["<<j<<"] = "<<isPassMedium_NoSigmaEtaEta->at(passingElectron[j])<<endl;
 
-	if(isPassMedium_NoSigmaEtaEta->at(j) == 0) continue;
+	if(isPassMedium_NoSigmaEtaEta->at(passingElectron[j]) == 0) continue;
 
-	cout<<"Yes Den---   Pt["<<j<<"] = "<<Pt<<"   Eta["<<j<<"] = "<<Eta<<"   Sigma_eta["<<j<<"] = "<<Sigma_eta<<endl; 
+	cout<<"Denominator-> Pt["<<j<<"] = "<<Pt<<"   Eta["<<j<<"] = "<<Eta<<"   sigma_ieta_ieta["<<j<<"] = "<<Sigma_eta<<endl; 
 	denominator_pt->Fill(Pt,lumi_Weight*PUWeight*2258.066*theWeight);
 	denominator_eta->Fill(Eta,lumi_Weight*PUWeight*2258.066*theWeight);
 	denominator->Fill(Sigma_eta,lumi_Weight*PUWeight*2258.066*theWeight);
@@ -281,11 +267,11 @@ void selectDenAndNumForFR_BKG() {
 	  denominator_endcap->Fill(Sigma_eta,lumi_Weight*PUWeight*2258.066*theWeight);
 	}
 
-	cout<<"Medium ID["<<j<<"] = "<<passMediumId->at(j)<<endl;
+	cout<<"Medium ID with sigma eta unmasked["<<j<<"] = "<<passMediumId->at(passingElectron[j])<<endl;
 
-	if(passMediumId->at(j) == 0) continue;
+	if(passMediumId->at(passingElectron[j]) == 0) continue;
 
-	cout<<"Yes Num---   Pt["<<j<<"] = "<<Pt<<"   Eta["<<j<<"] = "<<Eta<<"   Sigma_eta["<<j<<"] = "<<Sigma_eta<<endl;
+	cout<<"Numerator->   Pt["<<j<<"] = "<<Pt<<"   Eta["<<j<<"] = "<<Eta<<"   sigma_ieta_ieta["<<j<<"] = "<<Sigma_eta<<endl;
 
 	numerator_pt->Fill(Pt,lumi_Weight*PUWeight*2258.066*theWeight);
 	numerator_eta->Fill(Eta,lumi_Weight*PUWeight*2258.066*theWeight);
