@@ -12,6 +12,7 @@ Implementation:
 */
 //
 // Original Author:  Ilya Kravchenko
+//       Edited By:  Ridhi Chawla
 //         Created:  Thu, 10 Jul 2014 09:54:13 GMT
 //
 //
@@ -28,30 +29,51 @@ Implementation:
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/EDAnalyzer.h"
-
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
-
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
 #include "DataFormats/EgammaCandidates/interface/GsfElectron.h"
 #include "DataFormats/PatCandidates/interface/Electron.h"
-
 #include "DataFormats/VertexReco/interface/VertexFwd.h"
 #include "DataFormats/VertexReco/interface/Vertex.h"
-
-#include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
 #include "DataFormats/Common/interface/ValueMap.h"
-
+#include "DataFormats/Common/interface/ValueMap.h"
 #include "DataFormats/Candidate/interface/Candidate.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
-
 #include "DataFormats/EgammaCandidates/interface/ConversionFwd.h"
 #include "DataFormats/EgammaCandidates/interface/Conversion.h"
+#include "DataFormats/Common/interface/RefToPtr.h"
+#include "DataFormats/Common/interface/Ref.h"
+#include "DataFormats/Common/interface/RefVector.h"
+#include "DataFormats/Common/interface/RefHolder.h"
+#include "DataFormats/Common/interface/RefVectorHolder.h"
+#include "DataFormats/Common/interface/TriggerResults.h"
+#include "DataFormats/PatCandidates/interface/PackedTriggerPrescales.h"
+#include "DataFormats/Math/interface/deltaR.h"
+#include "DataFormats/PatCandidates/interface/TriggerObjectStandAlone.h"
+#include "DataFormats/HepMCCandidate/interface/GenStatusFlags.h"
+#include "DataFormats/PatCandidates/interface/Muon.h"
+#include "DataFormats/PatCandidates/interface/MET.h"
+#include "DataFormats/PatCandidates/interface/VIDCutFlowResult.h"
+
 #include "RecoEgamma/EgammaTools/interface/ConversionTools.h"
+#include "RecoEgamma/EgammaTools/interface/EffectiveAreas.h"
+
+#include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
+#include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
 
 #include "FWCore/ServiceRegistry/interface/Service.h"
+#include "FWCore/Utilities/interface/InputTag.h"
+#include "FWCore/Common/interface/TriggerNames.h"
+
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
+
+#include "PhysicsTools/Utilities/interface/LumiReWeighting.h"
+
+#include "RecoEgamma/EgammaIsolationAlgos/interface/HcalPFClusterIsolation.h"
+#include "RecoEgamma/EgammaIsolationAlgos/interface/EcalPFClusterIsolation.h"
 
 #include "TTree.h"
 #include "TLorentzVector.h"
@@ -59,38 +81,7 @@ Implementation:
 #include "Math/VectorUtil.h"
 #include "TClonesArray.h"
 
-#include "RecoEgamma/EgammaTools/interface/EffectiveAreas.h"
-#include "DataFormats/Common/interface/RefToPtr.h"
-#include "DataFormats/Common/interface/Ref.h"
-#include "DataFormats/Common/interface/RefVector.h"
-#include "DataFormats/Common/interface/RefHolder.h"
-#include "DataFormats/Common/interface/RefVectorHolder.h"
-
-#include "FWCore/Utilities/interface/InputTag.h"
-
-#include "FWCore/Common/interface/TriggerNames.h"
-#include "DataFormats/Common/interface/TriggerResults.h"
-#include "DataFormats/PatCandidates/interface/PackedTriggerPrescales.h"
-
-#include "DataFormats/Math/interface/deltaR.h"
-
-#include "DataFormats/PatCandidates/interface/TriggerObjectStandAlone.h"
-
-#include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
-#include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
-
-#include "DataFormats/HepMCCandidate/interface/GenStatusFlags.h"
-
-#include "DataFormats/PatCandidates/interface/Muon.h"
-#include "PhysicsTools/Utilities/interface/LumiReWeighting.h"
-#include "DataFormats/PatCandidates/interface/MET.h"
-
-#include "DataFormats/PatCandidates/interface/VIDCutFlowResult.h"
-
 #include "/afs/cern.ch/work/r/rchawla/public/utils.h"
-
-#include "RecoEgamma/EgammaIsolationAlgos/interface/HcalPFClusterIsolation.h"
-#include "RecoEgamma/EgammaIsolationAlgos/interface/EcalPFClusterIsolation.h"
 
 //
 // class declaration
@@ -145,10 +136,6 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     edm::EDGetTokenT<edm::ValueMap<bool> > eleMediumIdMapToken_;
     edm::EDGetTokenT<edm::ValueMap<bool> > eleTightIdMapToken_;
     edm::EDGetTokenT<edm::ValueMap<bool> > eleHEEPIdMapToken_;
-    //edm::EDGetTokenT<edm::ValueMap<bool> > eletrigMVAlooseMapToken_;
-    //edm::EDGetTokenT<edm::ValueMap<bool> > eletrigMVAtightMapToken_;    
-    //edm::EDGetTokenT<edm::ValueMap<bool> > elenontrigMVAlooseMapToken_;
-    //edm::EDGetTokenT<edm::ValueMap<bool> > elenontrigMVAtightMapToken_;
 
     edm::EDGetTokenT<GenEventInfoProduct> genToken_;
 
@@ -160,8 +147,6 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
 
     edm::Service<TFileService> fs;
     TTree *electronTree_;
-
-    //edm::LumiReWeighting LumiWeights_;
 
     // If MC
     bool misMC;
@@ -181,7 +166,6 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
     Int_t nPU;        // generated pile-up
     Int_t nPV;        // number of reconsrtucted primary vertices
     Float_t rho;      // the rho variable
-    //Double_t PUWeight_;
 
     // Trigger
     std::regex ele23_WPLoose;
@@ -216,11 +200,6 @@ class SimpleElectronNtupler : public edm::EDAnalyzer {
 
     // all electron variables
     Int_t nGenElectrons;
-
-    //std::vector<Int_t>   genPhoton_Id_;
-    //std::vector<Int_t>   genlepMother_Id_;
-    //std::vector<Bool_t>  fromHProcessFinalState_;
-    //std::vector<Bool_t>  fromHProcessDecayed_;
 
     std::vector<Float_t> genPhoton_Px_;
     std::vector<Float_t> genPhoton_Py_;
@@ -413,10 +392,6 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   eleMediumIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleMediumIdMap"))),
   eleTightIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleTightIdMap"))),
   eleHEEPIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleHEEPIdMap"))),
-  //eletrigMVAlooseMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eletrigMVAlooseIdMap"))),
-  //eletrigMVAtightMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eletrigMVAtightIdMap"))),
-  //elenontrigMVAlooseMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("elenontrigMVAlooseIdMap"))),
-  //elenontrigMVAtightMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("elenontrigMVAtightIdMap"))),
   eleMediumIdFullInfoMapToken_(consumes<edm::ValueMap<vid::CutFlowResult> >(iConfig.getParameter<edm::InputTag>("eleMediumIdFullInfoMap"))),
   verboseIdFlag_(iConfig.getParameter<bool>("eleIdVerbose"))
 
@@ -526,8 +501,6 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   genToken_ = mayConsume<GenEventInfoProduct>
   (iConfig.getParameter<edm::InputTag>("eventWeight"));
 
-  //  weightSrcToken_ = iC.consumes<GenEventInfoProduct>(iConfig.getParameter<edm::InputTag>("eventWeight"));
-
   //
   // Set up the ntuple structure
   //
@@ -547,7 +520,6 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronTree_->Branch("nPU"        ,  &nPU     , "nPU/I");
   electronTree_->Branch("nPUTrue"    ,  &nPUTrue , "nPUTrue/I");
   electronTree_->Branch("rho"        ,  &rho , "rho/F");
-  //electronTree_->Branch("PUWeight", &PUWeight_, "PUWeight/D");
 
   electronTree_->Branch("Ele23_WPLoose" ,  &Ele23_WPLoose);
   electronTree_->Branch("Ele27_WP85"    ,  &Ele27_WP85);
@@ -590,11 +562,6 @@ SimpleElectronNtupler::SimpleElectronNtupler(const edm::ParameterSet& iConfig):
   electronTree_->Branch("nGenEle"    ,  &nGenElectrons , "nGenEle/I");
   electronTree_->Branch("nGenTau"    ,  &nGenTaus , "nGenTau/I");
   electronTree_->Branch("tauFlag", &tauFlag, "tauFlag/I");
-
-  //electronTree_->Branch("genlep_Id", &genlep_Id_);
-  //electronTree_->Branch("genlepMother_Id", &genlepMother_Id_);
-  //electronTree_->Branch("fromHProcessFinalState", &fromHProcessFinalState_);
-  //electronTree_->Branch("fromHProcessDecayed", &fromHProcessDecayed_);
 
   electronTree_->Branch("genPhoton_Px"    ,  &genPhoton_Px_    );
   electronTree_->Branch("genPhoton_Py"    ,  &genPhoton_Py_    );
@@ -744,8 +711,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   Lumi  = iEvent.luminosityBlock();
   Bunch = iEvent.bunchCrossing();
 
-  //cout<<"1"<<endl;
-
   if(misMC){
 
       edm::Handle<GenEventInfoProduct> genEvtInfo;
@@ -755,13 +720,11 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
       if(genEvtInfo.isValid()) {
       theWeight = genEvtInfo->weight();
-      //cout << theWeight << endl;
 
     }
   }
 
   // Get Pileup info
-
   if(misMC){
     Handle<edm::View<PileupSummaryInfo> > pileupHandle;
     iEvent.getByToken(pileupToken_, pileupHandle);
@@ -772,8 +735,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       }
     }
   }
-
-  //cout<<"2"<<endl;
 
   // Get Triggers
   Handle<edm::TriggerResults> triggerHandle;
@@ -804,14 +765,14 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   std::string photon120Filter("hltEG120HEFilter");
   std::string photon175Filter("hltEG175HEFilter");
 
-  //bool trigResult = false;
-  //for (unsigned int i=0; i<triggerHandle->size(); i++)
-  //{
-    //std::string trigName = triggerNames.triggerName(i);
-    //trigResult = triggerHandle->accept(i);
-    //cout<<"Name of Trigger = "<<trigName<<"   Trigger Result = "<<trigResult<<"   Trigger Number = "<<i<<endl;
-    //if(i==42) cout<<"trig result Ele23: "<<trigResult<<endl;
-  //}
+  /*bool trigResult = false;
+  for (unsigned int i=0; i<triggerHandle->size(); i++)
+  {
+    std::string trigName = triggerNames.triggerName(i);
+    trigResult = triggerHandle->accept(i);
+    cout<<"Name of Trigger = "<<trigName<<"   Trigger Result = "<<trigResult<<"   Trigger Number = "<<i<<endl;
+    if(i==42) cout<<"trig result Ele23: "<<trigResult<<endl;
+  }*/
 
   singlePhoton = 0;
   prescalePhoton = 0;
@@ -820,11 +781,9 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   for (pat::TriggerObjectStandAlone obj : *triggerObjects) {
     obj.unpackPathNames(triggerNames);
-    //cout<<"Trigger: "<<obj.unpackPathNames(triggerNames)<<endl;
     for (unsigned j = 0; j < obj.filterLabels().size(); ++j){
 
       if((SEFilter.compare(obj.filterLabels()[j]))==0){
-        //cout<<"pt: "<<obj.pt()<<endl;
 	pt_Ele23.push_back(obj.pt());
 	eta_Ele23.push_back(obj.eta());
 	phi_Ele23.push_back(obj.phi());
@@ -956,8 +915,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     if(std::regex_match(triggerNames.triggerName(i),ele23_pfjet)) Ele23_PFJet = triggerHandle->accept(i);
     if(std::regex_match(triggerNames.triggerName(i),ele33_pfjet)) Ele33_PFJet = triggerHandle->accept(i);
 
-    //if(i==42) cout<<"Ele23: "<<Ele23_WPLoose<<endl;
-    
     if(photon22){
       if(std::regex_match(triggerNames.triggerName(i),Photon_22)) {
 	singlePhoton = triggerHandle->accept(i);
@@ -1016,17 +973,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   }
 
-  //cout<<"Event = "<<EvtNo<<endl;
-  //cout<<"Trigger Ele23_WPLoose decision = "<<Ele23_WPLoose<<endl;
-  //cout<<"Trigger Ele8_PFJet30 decision  = "<<Ele8_PFJet<<endl;
-  //cout<<"Trigger Ele12_PFJet30 decision = "<<Ele12_PFJet<<endl;
-  //cout<<"Trigger Ele23_PFJet30 decision = "<<Ele23_PFJet<<endl;
-  //cout<<"Trigger Ele33_PFJet30 decision = "<<Ele33_PFJet<<endl;
-  //cout<<""<<endl;
-
-  //cout<<"singlePhoton: "<<singlePhoton<<"   "<<"prescalePhoton: "<<prescalePhoton<<endl;
-  //cout<<"3"<<endl;
-
   // Get rho value
   edm::Handle< double > rhoH;
   iEvent.getByToken(rhoToken_,rhoH);
@@ -1061,15 +1007,9 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     for(size_t i = 0; i < genParticles->size(); ++i){
       const GenParticle &genlep = (*genParticles)[i];
 
-      //if(abs(genlep.pdgId())==22) genlepMother_Id_.push_back(genlep.mother(0)->pdgId());
-
-      //fromHProcessFinalState_.push_back(genlep.fromHardProcessFinalState());
-      //fromHProcessDecayed_.push_back(genlep.fromHardProcessDecayed());
-
       nGenElectrons++;
 
       // gen Photon
-      //if(abs(genlep.pdgId())==22 && abs(genlep.mother(0)->pdgId())== 11)
       if(abs(genlep.pdgId())==22){
 
 	genPhoton_Px_.push_back(genlep.px());
@@ -1107,7 +1047,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
         genPreFSR_Phi_.push_back(genlep.phi());
         genPreFSR_En_.push_back(genlep.energy());
       }
-      //  cout << "******************************" << endl;
 
       // Separating the taus coming from Z decay
       if(abs(genlep.pdgId())==15 && genlep.fromHardProcessDecayed()==1) nGenTaus++;
@@ -1166,10 +1105,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     iEvent.getByToken(eleMediumIdMapToken_,medium_id_decisions);
     iEvent.getByToken(eleTightIdMapToken_ ,tight_id_decisions);
     iEvent.getByToken(eleHEEPIdMapToken_ ,heep_id_decisions);
-    //iEvent.getByToken(eletrigMVAlooseMapToken_ ,trigMVAloose_id_decisions);
-    //iEvent.getByToken(eletrigMVAtightMapToken_ ,trigMVAtight_id_decisions);
-    //iEvent.getByToken(elenontrigMVAlooseMapToken_ ,nontrigMVAloose_id_decisions);
-    //iEvent.getByToken(elenontrigMVAtightMapToken_ ,nontrigMVAtight_id_decisions);
 
     // Full cut flow info for one of the working points:
     edm::Handle<edm::ValueMap<vid::CutFlowResult> > medium_id_cutflow;
@@ -1182,7 +1117,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       const auto el = electrons->ptrAt(i);
 
       // Kinematics
-
       if(el->pt() > 10. && el->eta() <= 2.5){
 
 	nElectrons++;
@@ -1209,9 +1143,7 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	E1x5_.push_back(el->e1x5());
 	E2x5_.push_back(el->e2x5Max());
 	E5x5_.push_back(el->e5x5());
-	//hOverE_.push_back(el->hcalOverEcal());
 	hOverE_.push_back(el->hadronicOverEm());
-	//cout<<"H/E = "<<el->hcalOverEcal()<<"   "<<el->hadronicOverEm()<<endl;
         etaScWidth_.push_back(el->superCluster()->etaWidth());
 	phiScWidth_.push_back(el->superCluster()->phiWidth());
 	r9_.push_back(el->r9());
@@ -1224,9 +1156,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
 	// ECAL + Track
 	dEtaIn_.push_back(el->deltaEtaSuperClusterTrackAtVtx());
-        //float dEtaInSeed1 = el->superCluster().isNonnull() && el->superCluster()->seed().isNonnull() ? el->deltaEtaSuperClusterTrackAtVtx() - el->superCluster()->eta() + el->superCluster()->seed()->eta() : std::numeric_limits<float>::max();
-        //float dEtaInSeed2 = el->deltaEtaSuperClusterTrackAtVtx() + log(tan(el->superCluster()->position().theta()/2)) - log(tan(el->superCluster()->seed()->position().theta()/2));
-        //cout<<"dEtaInSeed = "<<dEtaInSeed1<<"   "<<dEtaInSeed2<<endl;
         dEtaInSeed_.push_back(el->superCluster().isNonnull() && el->superCluster()->seed().isNonnull() ? el->deltaEtaSuperClusterTrackAtVtx() - el->superCluster()->eta() + el->superCluster()->seed()->eta() : std::numeric_limits<float>::max());
 	dPhiIn_.push_back(el->deltaPhiSuperClusterTrackAtVtx());
 	// |1/E-1/p| = |1/E - EoverPinner/E| is computed below. The if protects against ecalEnergy == inf or zero
@@ -1275,19 +1204,11 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	bool isPassMedium = (*medium_id_decisions)[el];
 	bool isPassTight  = (*tight_id_decisions)[el];
 	bool isPassHEEP = (*heep_id_decisions)[el];
-        //bool istrigMVALoose = (*trigMVAloose_id_decisions)[el];
-        //bool istrigMVATight = (*trigMVAtight_id_decisions)[el];
-        //bool isnontrigMVALoose = (*nontrigMVAloose_id_decisions)[el];
-        //bool isnontrigMVATight = (*nontrigMVAtight_id_decisions)[el];
 	passVetoId_.push_back  ( (int)isPassVeto  );
 	passLooseId_.push_back ( (int)isPassLoose );
 	passMediumId_.push_back( (int)isPassMedium);
 	passTightId_.push_back ( (int)isPassTight );
 	passHEEPId_.push_back ( (int)isPassHEEP );
-        //passtrigMVALoose_.push_back ( (int)istrigMVALoose );
-        //passtrigMVATight_.push_back ( (int)istrigMVATight );
-        //passnontrigMVALoose_.push_back ( (int)isnontrigMVALoose );
-        //passnontrigMVATight_.push_back ( (int)isnontrigMVATight );
 
 	if( verboseIdFlag_ ) {
 	  vid::CutFlowResult fullCutFlowData = (*medium_id_cutflow)[el];
@@ -1320,7 +1241,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	isPassMedium_NoPt_.push_back(mediumID_Pt.cutFlowPassed());
 	isPassMedium_NoScEta_.push_back(mediumID_ScEta.cutFlowPassed());
 	isPassMedium_NoDEta_.push_back(mediumID_DEta.cutFlowPassed());
-	//cout<<"isPassMedium_NoDEta: "<<mediumID_DEta.cutFlowPassed()<<endl;
 
 	isPassMedium_NoDPhi_.push_back(mediumID_DPhi.cutFlowPassed());
 	isPassMedium_NoSigmaEtaEta_.push_back(mediumID_SigmaEtaEta.cutFlowPassed());
@@ -1338,8 +1258,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	// ECAL driven
 	eleEcalDrivenSeed_.push_back(el->ecalDrivenSeed());
 
-        //float normalizedGsfChi2 = el->gsfTrack().isNonnull() ? el->gsfTrack()->normalizedChi2() : std::numeric_limits<float>::max();
-        //cout<<"normalizedGsfChi2 = "<<normalizedGsfChi2<<endl;
         normalizedGsfChi2_.push_back(el->gsfTrack().isNonnull() ? el->gsfTrack()->normalizedChi2() : std::numeric_limits<float>::max());
 
       }
@@ -1445,11 +1363,6 @@ SimpleElectronNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     phiSPhoHLT_.clear();
 
     if(misMC && misSIG){
-
-      //genlep_Id_.clear();
-      //genlepMother_Id_.clear();
-      //fromHProcessFinalState_.clear();
-      //fromHProcessDecayed_.clear();
 
       genPhoton_Pt_.clear();
       genPhoton_Px_.clear();
