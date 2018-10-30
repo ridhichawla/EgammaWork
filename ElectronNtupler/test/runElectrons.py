@@ -14,12 +14,7 @@ process.load("Geometry.CaloEventSetup.CaloTopology_cfi");
 #
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) )
 
-#process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
-#process.GlobalTag.globaltag = 'MCRUN2_74_V9::All'                                             #MC
-#process.GlobalTag.globaltag = 'GR_E_V49::All'                                                 #Data
-
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff")
-#process.GlobalTag.globaltag = cms.string("76X_mcRun2_asymptotic_v12")
 process.GlobalTag.globaltag = cms.string("76X_dataRun2_v15")
 
 process.RandomNumberGeneratorService = cms.Service("RandomNumberGeneratorService",
@@ -34,18 +29,11 @@ process.RandomNumberGeneratorService = cms.Service("RandomNumberGeneratorService
 	                                           )
 
 inputFilesAOD = cms.untracked.vstring(
-    # AOD test files from /DYJetsToLL_M-50_13TeV-madgraph-pythia8/Phys14DR-PU20bx25_PHYS14_25_V1-v1/AODSIM
     '/store/mc/Phys14DR/DYJetsToLL_M-50_13TeV-madgraph-pythia8/AODSIM/PU20bx25_PHYS14_25_V1-v1/00000/00CC714A-F86B-E411-B99A-0025904B5FB8.root',
     )    
 
 inputFilesMiniAOD = cms.untracked.vstring(
-    # MiniAOD test files from /DYJetsToLL_M-50_13TeV-madgraph-pythia8/Phys14DR-PU20bx25_PHYS14_25_V1-v1/MINIAODSIM
-
-       #'/store/mc/RunIIFall15MiniAODv2/DYJetsToLL_M-2000to3000_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12_ext1-v1/40000/1EE52939-48D8-E511-8D0A-20CF3019DF17.root',
-       
        '/store/data/Run2015D/SingleElectron/MINIAOD/16Dec2015-v1/20001/86E53624-32A7-E511-A28D-0025905A60D0.root',
-       #'/store/data/Run2015C_25ns/SinglePhoton/MINIAOD/16Dec2015-v1/50000/02E07C2B-90B2-E511-96BB-0CC47A78A3F4.root'
-    
 )
 
 #
@@ -77,7 +65,6 @@ switchOnVIDElectronIdProducer(process, dataFormat)
 
 # define which IDs we want to produce
 my_id_modules = ['RecoEgamma.ElectronIdentification.Identification.cutBasedElectronID_Spring15_25ns_V1_cff',
-	         #'RecoEgamma.PhotonIdentification.Identification.cutBasedPhotonID_Spring15_25ns_V1_cff',
                  'RecoEgamma.ElectronIdentification.Identification.heepElectronID_HEEPV60_cff']
 
 #add them to the VID producer
@@ -107,7 +94,6 @@ process.ntupler = cms.EDAnalyzer('SimpleElectronNtupler',
 				 isSIG    = cms.untracked.bool(False),
 				 trigger  = cms.InputTag("TriggerResults::HLT"),
 				 prescale = cms.InputTag("patTrigger"),
-				 #pileup   = cms.InputTag("addPileupInfo"),
                                  pileup   = cms.InputTag("slimmedAddPileupInfo"),
 				 rho      = cms.InputTag("fixedGridRhoFastjetAll"),
                                  beamSpot = cms.InputTag('offlineBeamSpot'),
@@ -115,7 +101,6 @@ process.ntupler = cms.EDAnalyzer('SimpleElectronNtupler',
                                  #
                                  # Objects specific to AOD format
                                  #
-                                 #electrons    = cms.InputTag("gedGsfElectrons"),
                                  electrons    = cms.InputTag("calibratedElectrons"),
 				 genParticles = cms.InputTag("genParticles"),
                                  vertices     = cms.InputTag("offlinePrimaryVertices"),
@@ -124,8 +109,6 @@ process.ntupler = cms.EDAnalyzer('SimpleElectronNtupler',
                                  # Objects specific to MiniAOD format
                                  #
                                  muonsMiniAOD    = cms.InputTag("slimmedMuons"),
-				 #electronsMiniAOD    = cms.InputTag("slimmedElectrons"),
-				 #electronsMiniAOD    = cms.InputTag("selectedElectrons"),
 				 electronsMiniAOD    = cms.InputTag("calibratedPatElectrons"),
 				 photonsMiniAOD      = cms.InputTag("slimmedPhotons"),
 				 metsMiniAOD         = cms.InputTag("slimmedMETs"),
@@ -164,20 +147,8 @@ process.hcalDDDSimConstants = cms.ESProducer( "HcalDDDSimConstantsESModule",
   appendToDataLabel = cms.string( "" )
 )
 
-#from PhysicsTools.PatAlgos.preselection_eltau_cff import *
-#process.leadingElectron = process.slimmedElectrons.clone(
-#    src = 'slimmedElectrons', cut = 'pt>20'
-#    )
-#process.load("PhysicsTools.PatAlgos.selectionLayer1.electronCountFilter_cfi")
-#process.leadingElectronRequirement = process.countPatElectrons.clone(minNumber = 1, src = 'leadingElectron')
-#process.leadingleptonsequence = cms.Sequence(process.leadingElectron+process.leadingElectronRequirement)
-
 process.TFileService = cms.Service("TFileService",
                                    fileName = cms.string('Data_76X.root')
-				   #fileName = cms.string('Data.root')
                                    )
 
-
 process.p = cms.Path(process.selectedElectrons + process.calibratedPatElectrons + process.egmGsfElectronIDSequence + process.primaryVertexFilter + process.ntupler)
-#process.p = cms.Path(process.selectedElectrons * process.egmGsfElectronIDSequence * process.primaryVertexFilter * process.ntupler)
-#process.p = cms.Path(process.egmGsfElectronIDSequence * process.primaryVertexFilter * process.ntupler)
