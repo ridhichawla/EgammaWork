@@ -1,3 +1,5 @@
+<Flags LDFLAGS="-L/afs/cern.ch/work/r/rchawla/private/Analysis_ee_13TeV/RooUnfold/ -lRooUnfold" />
+
 <use name="FWCore/Framework"/>
 <use name="FWCore/PluginManager"/>
 <use name="FWCore/ParameterSet"/>
